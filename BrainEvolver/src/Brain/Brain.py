@@ -11,7 +11,8 @@ from DivisionTree import *
 
 class Brain(object):
   
-  def __init__(self, seed, inputs, outputs):
+  def __init__(self, seed, inputs, outputs, energy):
+    self.energy = energy
     self.seed = seed
     self.neurons = set([seed])
     self.inputs = inputs
