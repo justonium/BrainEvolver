@@ -5,8 +5,8 @@ Created on Dec 26, 2012
 '''
 
 import heapq
-from Neuron import Neuron
 from Synapse import Synapse
+from Neuron import Neuron
 from DivisionTree import *
 
 class Brain(object):
@@ -17,7 +17,7 @@ class Brain(object):
     self.neurons = set([seed])
     self.inputs = inputs
     self.outputs = outputs
-    self.events = heapq()
+    #self.events = heapq()
     
     openNeurons = set()
     closedNeurons = set()

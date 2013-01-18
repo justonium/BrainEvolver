@@ -9,6 +9,6 @@ from Brain import *
 synapse = Synapse(None, None, leafSynapseNode)
 nnode = NeuronNode(leafNeuronNode, leafNeuronNode, False)
 seed = Neuron(leafNeuronNode, set(), set())
-brain = Brain(seed, set(), set())
+brain = Brain(seed, set(), set(), 0)
 
 #brain2 = brain.spawn()
