@@ -10,9 +10,9 @@ class Gate(object):
   
   def __init__(self):
     '''structure'''
-    #self.container
-    #self.source
-    #self.sink
+    self.container
+    self.source
+    self.sink
     
     '''main attributes'''
     pass
