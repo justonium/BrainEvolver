@@ -4,8 +4,9 @@ Created on Dec 30, 2012
 @author: Justin
 '''
 from numpy import *
+from heapq import *
 from Divisible import Divisible
-import Synapse
+import Synapses
 from Tools import *
 from copy import deepcopy
 
@@ -44,14 +45,15 @@ dataTransformSize = transformSize(divisionDataSize)
 
 class Neuron(Divisible):
   
-  def __init__(self, node, inSynapses, outSynapses):
+  def __init__(self, node, inSynapses, outSynapses, data):
     "structure"
+    self.brain = None
     self.inSynapses = set(inSynapses)
     self.outSynapses = set(outSynapses)
     
     "division data"
     self.node = node
-    self.data = zeros(divisionDataSize())
+    self.data = data
     
     "static behavior of all other attributes"
     self.fireTransform = None
@@ -59,6 +61,7 @@ class Neuron(Divisible):
     
     "utilities"
     self.inBuffer = 0
+    self.nextEvent = None
     self.accessDict = { \
         'sensitivity' : lambda : self.data[sensitivity], \
         'bias' : lambda : self.data[bias], \
@@ -81,20 +84,36 @@ class Neuron(Divisible):
   def flush(self):
     self.input += self.sensitivity * (self.inBuffer + self.bias)
     self.inBuffer = 0.0
+    self.nextEvent.active = False
+    self.schedule()
   
   def fire(self):
-    for synapse in self.synapses:
+    for synapse in self.outSynapses:
       synapse.fire()
+    for synapse in self.outSynapses:
+      synapse.next.flush()
     self.data = applyTransform(self.data, self.fireTransform)
-    self.updateRates()
-    "enqueue new events"
-    pass
+    self.schedule()
   
   def evolve(self):
     self.data = applyTransform(self.data, self.evolveTransform)
+    self.schedule()
+  
+  "enqueues new events"
+  def schedule(self):
     self.updateRates()
-    "enqueue new events"
-    pass
+    fireDelay = sampleDelay(self.fireRate)
+    evolveDelay = sampleDelay(self.evolveRate)
+    if (fireDelay < evolveDelay):
+      delay = fireDelay
+      action = self.fire
+    else:
+      delay = evolveDelay
+      action = self.evolve
+    event = NeuronEvent(self, action, self.brain.currentTime + delay)
+    self.nextEvent = event
+    self.brain.events.heappush(event)
+      
   
   def updateRates(self):
     self.fireRate = self.fireRateScale * \
@@ -157,15 +176,24 @@ class Neuron(Divisible):
     for synapse in self.outSynapses:
       synapse.finalize()
   
+  "should only be called on a seed neuron"
   def spawn(self):
-    pass
+    synapse = list(self.outSynapses)[0].spawn()
+    #data should be mutated.
+    return Neuron(self.node.spawn(), [synapse], [synapse], self.data)
 
 
 
 class NeuronEvent(object):
   
-  def __init__(self):
-    pass
+  def __init__(self, neuron, action, executionTime):
+    self.neuron = neuron
+    self.action = action
+    self.executionTime = executionTime
+    self.active = True
+  
+  def execute(self):
+    self.action()
 
 
 

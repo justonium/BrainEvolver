@@ -4,20 +4,24 @@ Created on Dec 26, 2012
 @author: Justin
 '''
 
-import heapq
-from Synapse import Synapse
-from Neuron import Neuron
+from numpy import *
+from heapq import *
+from Synapses import Synapse
+import Neurons
+from Neurons import Neuron
 from DivisionTree import *
 
 class Brain(object):
   
   def __init__(self, seed, inputs, outputs, energy):
+    seed.brain = self
     self.energy = energy
+    self.currentTime = None
     self.seed = seed
     self.neurons = set([seed])
     self.inputs = inputs
     self.outputs = outputs
-    #self.events = heapq()
+    self.events = []
     
     openNeurons = set()
     closedNeurons = set()
@@ -73,19 +77,39 @@ class Brain(object):
     childSeed = self.seed.spawn()
     return Brain(childSeed, self.inputs, self.outputs)
   
-  "Returns a default brain with no evolved structure."
-  def createEmpty(self):
-    synapse = Synapse(leafSynapseNode, None, None)
-    neuron = Neuron(leafNeuronNode, [synapse], [synapse])
-    synapse.prev = neuron
-    synapse.next = neuron
-    return neuron
+  def startTime(self):
+    self.currentTime = 0.0
+    for neuron in self.neurons:
+      neuron.schedule()
+      for synapse in neuron.outSynapses:
+        synapse.schedule()
   
   "Runs until it is in sync with currentTime."
-  def updateTime(self, currentTime):
-    pass
+  def elapseTime(self, timeElapsed):
+    self.currentTime += timeElapsed
+    while (self.events.peak().executionTime < self.currentTime):
+      event = self.events.heappop()
+      if (event.active):
+        event.execute()
+
 
 
 "takes two brains and returns a child brain"
 def breed(a, b):
   pass
+
+"Returns a default brain with no evolved structure."
+def createEmpty(inputs, outputs, energy):
+  synapse = Synapse(leafSynapseNode, None, None)
+  neuron = Neuron(leafNeuronNode, [synapse], [synapse], zeros(Neurons.divisionDataSize))
+  synapse.prev = neuron
+  synapse.next = neuron
+  brain = Brain(neuron, inputs, outputs, energy)
+  brain.startTime()
+  return brain
+
+
+
+
+
+

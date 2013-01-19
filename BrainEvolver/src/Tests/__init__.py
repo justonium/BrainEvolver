@@ -6,9 +6,9 @@ Created on Jan 15, 2013
 
 from Brain import *
 
-synapse = Synapse(None, None, leafSynapseNode)
+brain = createEmpty([], [], 0)
 nnode = NeuronNode(leafNeuronNode, leafNeuronNode, False)
-seed = Neuron(leafNeuronNode, set(), set())
-brain = Brain(seed, set(), set(), 0)
+brain.seed.node = nnode
+list(brain.seed.outSynapses)[0].node = SynapseNode(leafSynapseNode, leafSynapseNode, False)
 
-#brain2 = brain.spawn()
+brain.elapseTime(1.)

@@ -5,9 +5,10 @@ Created on Dec 30, 2012
 '''
 
 from numpy import *
+from heapq import *
 from copy import deepcopy
 from Divisible import Divisible
-import Neuron
+import Neurons
 from Tools import *
 
 "main attributes"
@@ -27,7 +28,7 @@ evolveRateEnd = evolveRate + evolveRateSize
 
 dataSize = paramSize + evolveRateSize
 fireTransformSize = transformSize(dataSize)
-evolveTransformSize = transformSize(dataSize + 2*Neuron.dataSize)
+evolveTransformSize = transformSize(dataSize + 2*Neurons.dataSize)
 "used to access data only in finalize"
 fireTransform = dataSize
 evolveTransform = dataSize + fireTransformSize
@@ -52,6 +53,7 @@ class Synapse(Divisible):
     self.evolveTransform = None
     
     "utilities"
+    self.nextEvent = None
     self.accessDict = { \
         'activation' : lambda : self.data[activation], \
         'weight' : lambda : self.data[weight], \
@@ -68,14 +70,22 @@ class Synapse(Divisible):
   def fire(self):
     next.inBuffer += self.weight * self.activation
     self.data = applyTransform(self.data, self.fireTransform)
-    self.updateRates()
-    pass #schedule new evolve time
+    self.nextEvent.active = False
+    self.schedule()
   
   def evolve(self, time):
     transformParam = concatenate(self.data, self.prev.data, self.next.data)
     self.data = applyTransform(transformParam, self.evolveTransform)
+    self.schedule()
+  
+  "enqueues new events"
+  def schedule(self):
     self.updateRates()
-    pass #schedule new evolve time
+    delay = sampleDelay(self.evolveRate)
+    action = self.evolve
+    event = SynapseEvent(self, action, self.prev.brain.currentTime + delay)
+    self.nextEvent = event
+    self.brain.events.heappush(event)
   
   def updateRates(self):
     self.evolveRate = self.evolveRateScale * \
@@ -97,6 +107,25 @@ class Synapse(Divisible):
         rollTransform(self.data[evolveTransform:evolveTransformEnd], dataSize)
     self.data = self.data[:dataSize]
     self.data = None
+  
+  def spawn(self):
+    pass
+
+
+
+
+class SynapseEvent(object):
+  
+  def __init__(self, synapse, action, executionTime):
+    self.synapse = synapse
+    self.action = action
+    self.executionTime = executionTime
+    self.active = True
+  
+  def execute(self):
+    self.action()
+
+
 
 
 

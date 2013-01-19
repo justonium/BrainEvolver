@@ -6,5 +6,5 @@ Created on Jan 13, 2013
 
 from Brain import *
 from DivisionTree import *
-from Neuron import Neuron
-from Synapse import Synapse
+from Neurons import Neuron
+from Synapses import Synapse
