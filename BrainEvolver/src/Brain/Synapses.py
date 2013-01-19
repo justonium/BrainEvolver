@@ -27,8 +27,10 @@ evolveRate = paramSize
 evolveRateEnd = evolveRate + evolveRateSize
 
 dataSize = paramSize + evolveRateSize
-fireTransformSize = transformSize(dataSize)
-evolveTransformSize = transformSize(dataSize + 2*Neurons.dataSize)
+fireTransformWidth = dataSize + 2*Neurons.dataSize
+evolveTransformWidth = dataSize + 2*Neurons.dataSize
+fireTransformSize = transformSize(fireTransformWidth)
+evolveTransformSize = transformSize(fireTransformWidth)
 "used to access data only in finalize"
 fireTransform = dataSize
 evolveTransform = dataSize + fireTransformSize
@@ -40,13 +42,17 @@ dataTransformSize = transformSize(divisionDataSize)
 
 class Synapse(Divisible):
   
-  def __init__(self, node, prev, nextNeuron):
+  def __init__(self, node, prev, nextNeuron, data):
     "structure"
+    self.brain = None
     self.prev = prev
     self.next = nextNeuron
     
     "division data"
     self.node = node
+    self.data = data
+    
+    self.evolveRate = None
     
     "dynamic behavior of main attributes"
     self.fireTransform = None
@@ -58,24 +64,27 @@ class Synapse(Divisible):
         'activation' : lambda : self.data[activation], \
         'weight' : lambda : self.data[weight], \
         'evolveRateScale' : lambda : self.data[evolveRateScale], \
-        'evolveRate' : lambda : self.data[evolveRate:evolveRateEnd] \
+        'params' : lambda : self.data[:paramSize], \
+        'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
         }
     self.writeDict = { \
         'activation' : super(Synapse, self).writeValue(activation), \
         'weight' : self.writeValue(weight), \
         'evolveRateScale' : self.writeValue(evolveRateScale), \
-        'evolveRate' : self.writeVector(evolveRate, evolveRateSize) \
+        'params' : lambda : self.writeValue(0, paramSize), \
+        'evolveRateFun' : self.writeVector(evolveRate, evolveRateSize) \
         }
   
   def fire(self):
     next.inBuffer += self.weight * self.activation
-    self.data = applyTransform(self.data, self.fireTransform)
+    transformParam = concatenate(self.data, self.prev.data, self.next.data)
+    self.data += applyTransform(transformParam, self.fireTransform)
     self.nextEvent.active = False
     self.schedule()
   
   def evolve(self, time):
     transformParam = concatenate(self.data, self.prev.data, self.next.data)
-    self.data = applyTransform(transformParam, self.evolveTransform)
+    self.data += applyTransform(transformParam, self.evolveTransform)
     self.schedule()
   
   "enqueues new events"
@@ -83,13 +92,12 @@ class Synapse(Divisible):
     self.updateRates()
     delay = sampleDelay(self.evolveRate)
     action = self.evolve
-    event = SynapseEvent(self, action, self.prev.brain.currentTime + delay)
-    self.nextEvent = event
-    self.brain.events.heappush(event)
+    if (delay < inf):
+      self.pushEvent(action, self.prev.brain.currentTime + delay)
   
   def updateRates(self):
     self.evolveRate = self.evolveRateScale * \
-        sigmoid(applyTransform(self.data, self.evolveRate))
+        sigmoid(applyTransform(self.params, self.evolveRateFun))
   
   def divide(self, chemicals):
     "apply left and right transforms to the data of left and right"
@@ -102,11 +110,10 @@ class Synapse(Divisible):
   
   def finalize(self):
     self.fireTransform = \
-        rollTransform(self.data[fireTransform:fireTransformEnd], dataSize)
+        rollTransform(self.data[fireTransform:fireTransformEnd], fireTransformWidth)
     self.evolveTransform = \
-        rollTransform(self.data[evolveTransform:evolveTransformEnd], dataSize)
+        rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth)
     self.data = self.data[:dataSize]
-    self.data = None
   
   def spawn(self):
     pass
@@ -114,16 +121,7 @@ class Synapse(Divisible):
 
 
 
-class SynapseEvent(object):
-  
-  def __init__(self, synapse, action, executionTime):
-    self.synapse = synapse
-    self.action = action
-    self.executionTime = executionTime
-    self.active = True
-  
-  def execute(self):
-    self.action()
+
 
 
 

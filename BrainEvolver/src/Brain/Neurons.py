@@ -55,6 +55,9 @@ class Neuron(Divisible):
     self.node = node
     self.data = data
     
+    self.fireRate = None
+    self.evolveRate = None
+    
     "static behavior of all other attributes"
     self.fireTransform = None
     self.evolveTransform = None
@@ -68,8 +71,9 @@ class Neuron(Divisible):
         'input' : lambda : self.data[input], \
         'fireRateScale' : lambda : self.data[fireRateScale], \
         'evolveRateScale' : lambda : self.data[evolveRateScale], \
-        'fireRate' : lambda : self.data[fireRate:fireRateEnd], \
-        'evolveRate' : lambda : self.data[evolveRate:evolveRateEnd] \
+        'params' : lambda : self.data[:paramSize], \
+        'fireRateFun' : lambda : self.data[fireRate:fireRateEnd], \
+        'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
         }
     self.writeDict = { \
         'sensitivity' : self.writeValue(sensitivity), \
@@ -77,8 +81,9 @@ class Neuron(Divisible):
         'input' : self.writeValue(input), \
         'fireRateScale' : self.writeValue(fireRateScale), \
         'evolveRateScale' : self.writeValue(evolveRateScale), \
-        'fireRate' : self.writeVector(fireRate, fireRateSize), \
-        'evolveRate' : self.writeVector(evolveRate, evolveRateSize) \
+        'params' : lambda : self.writeValue(0, paramSize), \
+        'fireRateFun' : self.writeVector(fireRate, fireRateSize), \
+        'evolveRateFun' : self.writeVector(evolveRate, evolveRateSize) \
     }
   
   def flush(self):
@@ -92,11 +97,11 @@ class Neuron(Divisible):
       synapse.fire()
     for synapse in self.outSynapses:
       synapse.next.flush()
-    self.data = applyTransform(self.data, self.fireTransform)
+    self.data += applyTransform(self.data, self.fireTransform)
     self.schedule()
   
   def evolve(self):
-    self.data = applyTransform(self.data, self.evolveTransform)
+    self.data += applyTransform(self.data, self.evolveTransform)
     self.schedule()
   
   "enqueues new events"
@@ -110,16 +115,14 @@ class Neuron(Divisible):
     else:
       delay = evolveDelay
       action = self.evolve
-    event = NeuronEvent(self, action, self.brain.currentTime + delay)
-    self.nextEvent = event
-    self.brain.events.heappush(event)
-      
+    if (delay < inf):
+      self.pushEvent(action, self.brain.currentTime + delay)
   
   def updateRates(self):
     self.fireRate = self.fireRateScale * \
-        sigmoid(applyTransform(self.data, self.fireRate))
+        sigmoid(applyTransform(self.params, self.fireRateFun))
     self.evolveRate = self.evolveRateScale * \
-        sigmoid(applyTransform(self.data, self.evolveRate))
+        sigmoid(applyTransform(self.params, self.evolveRateFun))
   
   def divide(self):
     "initialize children"
@@ -184,16 +187,7 @@ class Neuron(Divisible):
 
 
 
-class NeuronEvent(object):
-  
-  def __init__(self, neuron, action, executionTime):
-    self.neuron = neuron
-    self.action = action
-    self.executionTime = executionTime
-    self.active = True
-  
-  def execute(self):
-    self.action()
+
 
 
 

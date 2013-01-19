@@ -6,6 +6,7 @@ Created on Dec 26, 2012
 
 from numpy import *
 from heapq import *
+import Synapses
 from Synapses import Synapse
 import Neurons
 from Neurons import Neuron
@@ -15,6 +16,7 @@ class Brain(object):
   
   def __init__(self, seed, inputs, outputs, energy):
     seed.brain = self
+    list(seed.outSynapses)[0].brain = self
     self.energy = energy
     self.currentTime = None
     self.seed = seed
@@ -71,6 +73,9 @@ class Brain(object):
             closedSynapses.add(synapse)
     
     self.neurons = closedNeurons
+    
+    for neuron in self.neurons:
+      neuron.finalize()
   
   "Returns an asexually produced child."
   def spawn(self):
@@ -87,8 +92,8 @@ class Brain(object):
   "Runs until it is in sync with currentTime."
   def elapseTime(self, timeElapsed):
     self.currentTime += timeElapsed
-    while (self.events.peak().executionTime < self.currentTime):
-      event = self.events.heappop()
+    while (self.events and self.events[0].executionTime < self.currentTime):
+      event = heappop(self.events)
       if (event.active):
         event.execute()
 
@@ -100,7 +105,7 @@ def breed(a, b):
 
 "Returns a default brain with no evolved structure."
 def createEmpty(inputs, outputs, energy):
-  synapse = Synapse(leafSynapseNode, None, None)
+  synapse = Synapse(leafSynapseNode, None, None, zeros(Synapses.divisionDataSize))
   neuron = Neuron(leafNeuronNode, [synapse], [synapse], zeros(Neurons.divisionDataSize))
   synapse.prev = neuron
   synapse.next = neuron

@@ -4,6 +4,8 @@ Created on Dec 30, 2012
 @author: Justin
 '''
 
+from heapq import *
+
 class Divisible(object):
   
   def __init__(self):
@@ -15,6 +17,11 @@ class Divisible(object):
   
   def finalize(self):
     raise NotImplementedError
+  
+  def pushEvent(self, action, executionTime):
+    event = Event(self, action, executionTime)
+    self.nextEvent = event
+    heappush(self.brain.events, event)
   
   def writeValue(self, location):
     def _writeValue(self, value):
@@ -32,5 +39,18 @@ class Divisible(object):
     else:
       self.writeDict[fieldname](value)
   
-  def __getattr__(self, fieldname, value):
-    self.accessDict[fieldname](value)
+  def __getattr__(self, fieldname):
+    return self.accessDict[fieldname]()
+
+
+
+class Event(object):
+  
+  def __init__(self, neuron, action, executionTime):
+    self.neuron = neuron
+    self.action = action
+    self.executionTime = executionTime
+    self.active = True
+  
+  def execute(self):
+    self.action()

@@ -11,7 +11,7 @@ def createIdentity(dataSize):
   #return hstack(zeros(dataSize, 1), identity(dataSize))
 
 def applyTransform(data, transform):
-  return data + dot(transform, append(array(1), data))
+  return dot(transform, append(array(1), data))
 
 def transformSize(x):
   return x * (x + 1)
@@ -28,7 +28,7 @@ maxRate = 24. #the frame rate of most movies
 minDelay = 1/maxRate
 
 def sampleDelay(rate):
-  return minDelay + random.exponential(1/rate)
+  return minDelay + random.exponential(1/rate) if rate > 0 else inf
 
 
 
