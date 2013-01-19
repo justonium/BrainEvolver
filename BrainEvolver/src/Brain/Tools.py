@@ -7,10 +7,11 @@ Created on Jan 15, 2013
 from numpy import *
 
 def createIdentity(dataSize):
-  return hstack(zeros(dataSize, 1), identity(dataSize))
+  return zeros(dataSize, dataSize + 1)
+  #return hstack(zeros(dataSize, 1), identity(dataSize))
 
 def applyTransform(data, transform):
-  return dot(transform, append(array(1), data))
+  return data + dot(transform, append(array(1), data))
 
 def transformSize(x):
   return x * (x + 1)
