@@ -11,6 +11,5 @@ nnode = NeuronNode(leafNeuronNode, leafNeuronNode, False)
 brain.seed.node = nnode
 list(brain.seed.outSynapses)[0].node = SynapseNode(leafSynapseNode, leafSynapseNode, False)
 
-brain.elapseTime(1.)
-
+brain.elapseTime(1.0)
 #ooook
