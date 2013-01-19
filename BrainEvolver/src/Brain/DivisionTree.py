@@ -28,14 +28,23 @@ class NeuronNode(DivisionNode):
 
 class SynapseNode(DivisionNode):
   
-  def __init__(self, left, right, complete, sourceCarries=[], sinkCarries=[], \
+  def __init__(self, left, right, complete, sourceCarries=[], sinkCarries=[], symmetric=False, \
                leftTransform=None, rightTransform=None):
     super(SynapseNode, self).__init__(left, right, complete)
     self.sourceCarries = sourceCarries
     self.sinkCarries = sinkCarries
+    self.symmetric = symmetric
     self.leftTransform = leftTransform
     self.rightTransform = rightTransform
+  
+  def isReady(self):
+    return not (self.sourceCarries and not self.source.node.complete) \
+      and not (self.sinkCarries and not self.sink.node.complete)
 
-leafNeuronNode = NeuronNode(None, None, True, None)
 
-leafSynapseNode = SynapseNode(None, None, True, [], [])
+
+leafNeuronNode = NeuronNode(None, None, True)
+
+leafSynapseNode = SynapseNode(None, None, True)
+
+

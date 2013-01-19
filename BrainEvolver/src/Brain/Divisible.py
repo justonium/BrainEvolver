@@ -11,6 +11,7 @@ class Divisible(object):
   def __init__(self):
     self.accessDict = None
     self.writeDict = None
+    self.nextEvent = None
   
   def divide(self):
     raise NotImplementedError

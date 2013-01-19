@@ -20,6 +20,7 @@ evolveRateScale = 4
 "paramSize < dataSize < divisionDataSize"
 numAttributes = 5
 numChemicals = 5
+params = 0
 paramSize = numAttributes + numChemicals
 
 fireRateSize = reduceSize(paramSize)
@@ -94,9 +95,9 @@ class Neuron(Divisible):
   
   def fire(self):
     for synapse in self.outSynapses:
-      synapse.fire()
+      synapse.fire(self)
     for synapse in self.outSynapses:
-      synapse.next.flush()
+      synapse.sink.flush()
     self.data += applyTransform(self.data, self.fireTransform)
     self.schedule()
   
@@ -139,8 +140,8 @@ class Neuron(Divisible):
     synapse = self.node.synapse
     left.outSynapses.add(synapse)
     right.inSynapses.add(synapse)
-    synapse.prev = left
-    synapse.next = right
+    synapse.source = left
+    synapse.sink = right
     
     "carry synapses to children"
     for synapse in self.inSynapses:
@@ -149,24 +150,24 @@ class Neuron(Divisible):
       synapse.node.sinkCarries.remove[-1]
       if (branch == 0):
         left.inSynapses.add(synapse)
-        synapse.prev = left
+        synapse.source = left
       else:
         right.inSynapses.add(synapse)
-        synapse.prev = right
+        synapse.source = right
     for synapse in self.outSynapses:
       synapse.node = deepcopy(synapse.node)
       branch = synapse.node.sourceCarries[-1]
       synapse.node.sinkCarries.remove[-1]
       if (branch == 0):
         left.outSynapses.add(synapse)
-        synapse.next = left
+        synapse.sink = left
       else:
         right.outSynapses.add(synapse)
-        synapse.next = right
+        synapse.sink = right
         
     "apply left and right transforms to the data of left and right"
-    left.data = applyTransform(self.data, self.node.leftTransform)
-    right.data = applyTransform(self.data, self.node.rightTransform)
+    left.data = self.data + applyTransform(self.data, self.node.leftTransform)
+    right.data = self.data + applyTransform(self.data, self.node.rightTransform)
     
     return ((left, right), synapse)
   

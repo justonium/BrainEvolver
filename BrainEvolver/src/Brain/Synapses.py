@@ -42,11 +42,11 @@ dataTransformSize = transformSize(divisionDataSize)
 
 class Synapse(Divisible):
   
-  def __init__(self, node, prev, nextNeuron, data):
+  def __init__(self, node, source, sink, data):
     "structure"
     self.brain = None
-    self.prev = prev
-    self.next = nextNeuron
+    self.source = source
+    self.sink = sink
     
     "division data"
     self.node = node
@@ -75,15 +75,16 @@ class Synapse(Divisible):
         'evolveRateFun' : self.writeVector(evolveRate, evolveRateSize) \
         }
   
-  def fire(self):
-    next.inBuffer += self.weight * self.activation
-    transformParam = concatenate(self.data, self.prev.data, self.next.data)
+  def fire(self, source):
+    sink = self.sink if source == self.source else self.source
+    sink.inBuffer += self.weight * self.activation
+    transformParam = concatenate(self.data, source.data, sink.data)
     self.data += applyTransform(transformParam, self.fireTransform)
     self.nextEvent.active = False
     self.schedule()
   
   def evolve(self, time):
-    transformParam = concatenate(self.data, self.prev.data, self.next.data)
+    transformParam = concatenate(self.data, self.source.data, self.sink.data)
     self.data += applyTransform(transformParam, self.evolveTransform)
     self.schedule()
   
@@ -93,7 +94,7 @@ class Synapse(Divisible):
     delay = sampleDelay(self.evolveRate)
     action = self.evolve
     if (delay < inf):
-      self.pushEvent(action, self.prev.brain.currentTime + delay)
+      self.pushEvent(action, self.source.brain.currentTime + delay)
   
   def updateRates(self):
     self.evolveRate = self.evolveRateScale * \
@@ -105,10 +106,16 @@ class Synapse(Divisible):
     right = deepcopy(self)
     left.node = self.node.left
     right.node = self.node.right
-    left.data = applyTransform(self.data, self.node.leftTransform)
-    right.data = applyTransform(self.data, self.node.rightTransform)
+    "make transforms use source and sink!"
+    leftTransformParam = concatenate(self.data, self.source.data, self.sink.data)
+    rightTransformParam = concatenate(self.data, self.source.data, self.sink.data)
+    left.data = self.data + applyTransform(leftTransformParam, self.node.leftTransform)
+    right.data = self.data + applyTransform(rightTransformParam, self.node.rightTransform)
   
   def finalize(self):
+    if (self.node.symmetric):
+      self.sink.inSynapses.remove(self)
+      self.sink.outSynapses.add(self)
     self.fireTransform = \
         rollTransform(self.data[fireTransform:fireTransformEnd], fireTransformWidth)
     self.evolveTransform = \

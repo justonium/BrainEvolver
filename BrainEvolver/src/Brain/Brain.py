@@ -38,7 +38,7 @@ class Brain(object):
       #place synapses in appropriate set
       for synapse in neuron.outSynapses:
         if (not synapse.node.complete):
-          if (not synapse.node.sourceCarries and not synapse.node.sinkCarries):
+          if (synapse.node.isReady()):
             openSynapses.add(synapse)
           else:
             closedSynapses.add(synapse)
@@ -52,7 +52,7 @@ class Brain(object):
           children = curr.divide()
           for child in children:
             if (not child.node.complete):
-              if (not child.node.sourceCarries and not child.node.sinkCarries):
+              if (child.node.isReady()):
                 openSynapses.add(child)
               else:
                 closedSynapses.add(child)
@@ -67,7 +67,7 @@ class Brain(object):
           else:
             openNeurons.add(child)
         if (synapse != None and not synapse.node.complete):
-          if (not synapse.node.sourceCarries and not synapse.node.sinkCarries):
+          if (synapse.node.isReady()):
             openSynapses.add(synapse)
           else:
             closedSynapses.add(synapse)
@@ -107,8 +107,8 @@ def breed(a, b):
 def createEmpty(inputs, outputs, energy):
   synapse = Synapse(leafSynapseNode, None, None, zeros(Synapses.divisionDataSize))
   neuron = Neuron(leafNeuronNode, [synapse], [synapse], zeros(Neurons.divisionDataSize))
-  synapse.prev = neuron
-  synapse.next = neuron
+  synapse.source = neuron
+  synapse.sink = neuron
   brain = Brain(neuron, inputs, outputs, energy)
   brain.startTime()
   return brain
