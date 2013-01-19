@@ -6,7 +6,7 @@ Created on Dec 30, 2012
 
 from heapq import *
 
-class Divisible(object):
+class Cell(object):
   
   def __init__(self):
     self.accessDict = None

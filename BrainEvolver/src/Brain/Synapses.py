@@ -7,7 +7,7 @@ Created on Dec 30, 2012
 from numpy import *
 from heapq import *
 from copy import deepcopy
-from Divisible import Divisible
+from Cell import Cell
 import Neurons
 from Tools import *
 
@@ -38,9 +38,11 @@ fireTransformEnd = fireTransform + fireTransformSize
 evolveTransformEnd = evolveTransform + evolveTransformSize
 
 divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
-dataTransformSize = transformSize(divisionDataSize)
+divisionTransformWidth = divisionDataSize + 2*Neurons.divisionDataSize
 
-class Synapse(Divisible):
+
+
+class Synapse(Cell):
   
   def __init__(self, node, source, sink, data):
     "structure"
@@ -121,6 +123,7 @@ class Synapse(Divisible):
     self.evolveTransform = \
         rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth)
     self.data = self.data[:dataSize]
+    self.node = None
   
   def spawn(self):
     pass

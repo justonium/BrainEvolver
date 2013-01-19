@@ -6,6 +6,7 @@ Created on Dec 26, 2012
 
 from numpy import *
 from heapq import *
+from copy import deepcopy, copy
 import Synapses
 from Synapses import Synapse
 import Neurons
@@ -15,12 +16,13 @@ from DivisionTree import *
 class Brain(object):
   
   def __init__(self, seed, inputs, outputs, energy):
-    seed.brain = self
+    "The parameter seed get's its brain reference modified."
+    self.seed = copy(seed)
+    self.seed.brain = self
     list(seed.outSynapses)[0].brain = self
     self.energy = energy
     self.currentTime = None
-    self.seed = seed
-    self.neurons = set([seed])
+    self.neurons = set([self.seed])
     self.inputs = inputs
     self.outputs = outputs
     self.events = []
@@ -77,11 +79,6 @@ class Brain(object):
     for neuron in self.neurons:
       neuron.finalize()
   
-  "Returns an asexually produced child."
-  def spawn(self):
-    childSeed = self.seed.spawn()
-    return Brain(childSeed, self.inputs, self.outputs)
-  
   def startTime(self):
     self.currentTime = 0.0
     for neuron in self.neurons:
@@ -96,6 +93,11 @@ class Brain(object):
       event = heappop(self.events)
       if (event.active):
         event.execute()
+  
+  "Returns an asexually produced child."
+  def spawn(self):
+    childSeed = self.seed.spawn()
+    return Brain(childSeed, self.inputs, self.outputs)
 
 
 
@@ -103,7 +105,10 @@ class Brain(object):
 def breed(a, b):
   pass
 
-"Returns a default brain with no evolved structure."
+'''
+Returns a default brain with no evolved structure.
+inputs and outputs must be lists of some sort (they could be numpy arrays).
+'''
 def createEmpty(inputs, outputs, energy):
   synapse = Synapse(leafSynapseNode, None, None, zeros(Synapses.divisionDataSize))
   neuron = Neuron(leafNeuronNode, [synapse], [synapse], zeros(Neurons.divisionDataSize))

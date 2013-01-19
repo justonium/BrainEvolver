@@ -5,7 +5,7 @@ Created on Dec 30, 2012
 '''
 from numpy import *
 from heapq import *
-from Divisible import Divisible
+from Cell import Cell
 import Synapses
 from Tools import *
 from copy import deepcopy
@@ -41,10 +41,11 @@ fireTransformEnd = fireTransform + fireTransformSize
 evolveTransformEnd = evolveTransform + evolveTransformSize
 
 divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
-dataTransformSize = transformSize(divisionDataSize)
+divisionTransformWidth = divisionDataSize
 
 
-class Neuron(Divisible):
+
+class Neuron(Cell):
   
   def __init__(self, node, inSynapses, outSynapses, data):
     "structure"
@@ -179,12 +180,14 @@ class Neuron(Divisible):
     self.data = self.data[:dataSize]
     for synapse in self.outSynapses:
       synapse.finalize()
+    self.node = None
   
   "should only be called on a seed neuron"
   def spawn(self):
     synapse = list(self.outSynapses)[0].spawn()
     #data should be mutated.
-    return Neuron(self.node.spawn(), [synapse], [synapse], self.data)
+    child = Neuron(self.node.spawn(), [synapse], [synapse], self.data)
+    return child
 
 
 
