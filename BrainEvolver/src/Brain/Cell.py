@@ -19,6 +19,9 @@ class Cell(object):
   def finalize(self):
     raise NotImplementedError
   
+  def spawn(self):
+    pass
+  
   def pushEvent(self, action, executionTime):
     event = Event(self, action, executionTime)
     self.nextEvent = event
@@ -27,12 +30,12 @@ class Cell(object):
   def writeValue(self, location):
     def _writeValue(self, value):
       self.data[location] = value
-    _writeValue
+    return _writeValue
   
   def writeVector(self, location, end):
     def _writeVector(self, value):
       self.data[location:end] = value
-    _writeVector
+    return _writeVector
   
   def __setattr__(self, fieldname, value):
     if (not self.__dict__.has_key(fieldname) or fieldname in self.__dict__):

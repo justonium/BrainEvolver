@@ -52,6 +52,10 @@ class Neuron(Cell):
     self.brain = None
     self.inSynapses = set(inSynapses)
     self.outSynapses = set(outSynapses)
+    for synapse in inSynapses:
+      synapse.sink = self
+    for synapse in outSynapses:
+      synapse.source = self
     
     "division data"
     self.node = node
@@ -184,9 +188,14 @@ class Neuron(Cell):
   
   "should only be called on a seed neuron"
   def spawn(self):
-    synapse = list(self.outSynapses)[0].spawn()
-    #data should be mutated.
-    child = Neuron(self.node.spawn(), [synapse], [synapse], self.data)
+    inSynapses = set()
+    outSynapses = set()
+    for synapse in self.inSynapses:
+      inSynapses.add(synapse.spawn())
+    for synapse in self.outSynapses:
+      outSynapses.add(synapse.spawn())
+    data = self.node.tree.mutateData()
+    child = Neuron(self.node.spawn(), inSynapses, outSynapses, data)
     return child
 
 

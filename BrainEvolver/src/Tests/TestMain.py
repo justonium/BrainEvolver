@@ -4,11 +4,10 @@ Created on Jan 17, 2013
 @author: Justin
 '''
 
-class Foo(object):
-  def __init__(self, bar):
-    print 'bar' in self.__dict__
-    self.bar = bar
-    print 'bar' in self.__dict__
-    print 'bar2' in self.__dict__
+from numpy import *
 
-a = Foo('hi')
+prod = 1.0
+for i in range(1000):
+  prod *= random.lognormal(0)
+
+print prod

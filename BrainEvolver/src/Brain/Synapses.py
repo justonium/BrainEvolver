@@ -126,7 +126,8 @@ class Synapse(Cell):
     self.node = None
   
   def spawn(self):
-    pass
+    data = self.node.tree.mutateData(self.data)
+    return Synapse(self.node.spawn(), self.source, self.sink, data)
 
 
 

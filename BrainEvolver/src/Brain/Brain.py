@@ -6,7 +6,6 @@ Created on Dec 26, 2012
 
 from numpy import *
 from heapq import *
-from copy import deepcopy, copy
 import Synapses
 from Synapses import Synapse
 import Neurons
@@ -17,7 +16,7 @@ class Brain(object):
   
   def __init__(self, seed, inputs, outputs, energy):
     "The parameter seed get's its brain reference modified."
-    self.seed = copy(seed)
+    self.seed = seed
     self.seed.brain = self
     list(seed.outSynapses)[0].brain = self
     self.energy = energy
@@ -79,7 +78,7 @@ class Brain(object):
     for neuron in self.neurons:
       neuron.finalize()
   
-  def startTime(self):
+  def _startTime(self):
     self.currentTime = 0.0
     for neuron in self.neurons:
       neuron.schedule()
@@ -110,12 +109,10 @@ Returns a default brain with no evolved structure.
 inputs and outputs must be lists of some sort (they could be numpy arrays).
 '''
 def createEmpty(inputs, outputs, energy):
-  synapse = Synapse(leafSynapseNode, None, None, zeros(Synapses.divisionDataSize))
-  neuron = Neuron(leafNeuronNode, [synapse], [synapse], zeros(Neurons.divisionDataSize))
-  synapse.source = neuron
-  synapse.sink = neuron
+  synapse = Synapse(rootSynapseNode(), None, None, zeros(Synapses.divisionDataSize))
+  neuron = Neuron(rootNeuronNode(), [synapse], [synapse], zeros(Neurons.divisionDataSize))
   brain = Brain(neuron, inputs, outputs, energy)
-  brain.startTime()
+  brain._startTime()
   return brain
 
 
