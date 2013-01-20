@@ -14,16 +14,17 @@ from DivisionTree import *
 
 class Brain(object):
   
-  def __init__(self, seed, inputs, outputs, energy):
+  def __init__(self, seed, inputs, outputs):
+    "These parameters are for outside use."
+    self.inputs = inputs
+    self.outputs = outputs
+    
     "The parameter seed get's its brain reference modified."
     self.seed = seed
     self.seed.brain = self
     list(seed.outSynapses)[0].brain = self
-    self.energy = energy
     self.currentTime = None
     self.neurons = set([self.seed])
-    self.inputs = inputs
-    self.outputs = outputs
     self.events = []
     
     openNeurons = set()
@@ -108,10 +109,10 @@ def breed(a, b):
 Returns a default brain with no evolved structure.
 inputs and outputs must be lists of some sort (they could be numpy arrays).
 '''
-def createEmpty(inputs, outputs, energy):
+def createEmpty(inputs, outputs):
   synapse = Synapse(rootSynapseNode(), None, None, zeros(Synapses.divisionDataSize))
   neuron = Neuron(rootNeuronNode(), [synapse], [synapse], zeros(Neurons.divisionDataSize))
-  brain = Brain(neuron, inputs, outputs, energy)
+  brain = Brain(neuron, inputs, outputs)
   brain._startTime()
   return brain
 
