@@ -7,6 +7,8 @@ import pygame
 from pygame.sprite import Sprite
 from pygame import Surface
 from random import randrange
+
+SCALE_FLAG = True
 class Floor(Sprite):
     '''
     classdocs
@@ -21,10 +23,10 @@ class Floor(Sprite):
         self.visionGrid = []
         self.heightMap = [[]]
         self.heightFunction = self._defaultHF
-        self.image = pygame.image.load('heightmap.bmp')
+        self.image = pygame.image.load('heightmap.png')
         self.rect = (0, 0, self.width, self.height)
         self.vertices = []
-        self.peaks = 30
+        self.peaks = 300
         
         for i in xrange(self.peaks):
             self.vertices.append((randrange(self.width), randrange(self.height)))
@@ -32,7 +34,12 @@ class Floor(Sprite):
         if not self.image:
             self.image = Surface((self.width, self.height))
             self._render()
-        pygame.image.save(self.image, 'heightmap.bmp')
+        pygame.image.save(self.image, 'heightmap.png')
+        if SCALE_FLAG:
+            tmpimg = pygame.transform.scale2x(self.image)
+            del self.image
+            self.image = tmpimg
+        
     
     def _render(self):
         self.image.fill(pygame.Color(255, 255, 255))
@@ -43,6 +50,7 @@ class Floor(Sprite):
                     pxArr[y][x] = self.heightMap[y][x]
         else:
             for y in xrange(self.height):
+                print 'y value: ' + str(y)
                 for x in xrange(self.width):
                     c = self.heightFunction(x, y)
                     pxArr[x][y] =  pygame.Color(int(c * 255), int(c * 255), int(c * 255))
