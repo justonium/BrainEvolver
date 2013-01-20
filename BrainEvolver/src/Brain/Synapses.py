@@ -47,7 +47,7 @@ divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
 class Synapse(Cell):
   
   def copy(self):
-    return Synapse(self.node, None, None, self.data.copy())
+    return Synapse(self.node, self.source, self.sink, self.data.copy())
   
   def __init__(self, node, source, sink, data):
     "structure"

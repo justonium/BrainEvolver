@@ -9,15 +9,18 @@ from heapq import *
 import Synapses
 from Synapses import Synapse
 import Neurons
-from Neurons import Neuron
+from Neurons import Neuron, InputNeuron, OutputNeuron
 from DivisionTree import *
 
 class Brain(object):
   
-  def __init__(self, seed, inputs, outputs):
+  def __init__(self, seed, inputs, outputs, inputNeurons, outputNeurons):
     "These parameters are for outside use."
     self.inputs = inputs
     self.outputs = outputs
+    
+    self.inputNeurons = inputNeurons
+    self.outputNeurons = outputNeurons
     
     self.seed = seed
     self.seed.brain = self
@@ -86,17 +89,34 @@ class Brain(object):
         synapse.schedule()
   
   "Runs until it is in sync with currentTime."
-  def elapseTime(self, timeElapsed):
+  def elapseTime(self, timeElapsed, inputs=None):
+    "Update input neurons."
+    if (inputs == None):
+      inputs = self.inputs
+    else:
+      self.inputs = inputs
+      for i in range(len(inputs)):
+        self.inputNeurons[i].fireRate = inputs[i]
+    self.outputs = 0*self.outputs
+    
+    "Let the network compute."
     self.currentTime += timeElapsed
     while (self.events and self.events[0].executionTime < self.currentTime):
       event = heappop(self.events)
       if (event.active):
         event.execute()
+    
+    "Read output neurons."
+    for i in range(len(self.outputs)):
+      self.outputs[i] = self.outputNeurons[i].input
   
   "Returns an asexually produced child."
   def spawn(self):
+    inputNeurons = [neuron.spawn(self.seed.node) for neuron in self.inputNeurons]
+    outputNeurons = [neuron.copy() for neuron in self.outputNeurons]
     childSeed = self.seed.spawn()
-    return Brain(childSeed, self.inputs, self.outputs)
+    return Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
+                 inputNeurons, outputNeurons)
 
 
 
@@ -109,9 +129,18 @@ Returns a default brain with no evolved structure.
 inputs and outputs must be lists of some sort (they could be numpy arrays).
 '''
 def createEmpty(inputs, outputs):
+  "Create isolated seed."
   synapse = Synapse(rootSynapseNode(), None, None, zeros(Synapses.divisionDataSize))
   neuron = Neuron(rootNeuronNode(), [synapse], [synapse], zeros(Neurons.divisionDataSize))
-  brain = Brain(neuron, inputs, outputs)
+  
+  "Connect seed to inputs and outputs."
+  inputNeurons = [InputNeuron(None, None, None, zeros(Neurons.divisionDataSize)) \
+                  for i in range(len(inputs))]
+  outputNeurons = [OutputNeuron(None, None, None, zeros(Neurons.divisionDataSize)) \
+                   for i in range(len(outputs))]
+  
+  "Make and start brain."
+  brain = Brain(neuron, inputs, outputs, inputNeurons, outputNeurons)
   brain._startTime()
   return brain
 

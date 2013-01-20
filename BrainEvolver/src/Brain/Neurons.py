@@ -218,6 +218,28 @@ class Neuron(Cell):
     return child
 
 
+class InputNeuron(Neuron):
+  
+  def updateRates(self):
+    fireRate = self.fireRate
+    super(InputNeuron, self).updateRates()
+    self.fireRate = fireRate
+  
+  def spawn(self, node):
+    inSynapses = set()
+    outSynapses = self.outSynapses
+    data = node.tree.mutateData(self.data)
+    child = Neuron(None, inSynapses, outSynapses, data)
+    return child
+
+class OutputNeuron(Neuron):
+  
+  def fire(self):
+    pass
+  
+  def evolve(self):
+    pass
+
 
 
 
