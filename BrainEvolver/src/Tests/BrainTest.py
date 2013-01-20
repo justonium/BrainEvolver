@@ -15,3 +15,5 @@ brain = createEmpty([], [])
 brain.elapseTime(1.0)
 
 brain2 = brain.spawn()
+
+brain3 = brain2.spawn()
