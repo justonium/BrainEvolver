@@ -32,8 +32,8 @@ class DivisionTree(object):
   
   def spawn(self, root):
     return DivisionTree(root, mutateRates(self.dataMutationRates), \
-        mutateRates(self.transformMutationRates), mutateRates(self.sharedRates), \
-        mutateRates(self.otherRates))
+        mutateRates(self.transformMutationRates), mutateRates(self.otherRates), \
+        mutateRates(self.sharedRates))
 
 class NeuronTree(DivisionTree):
   
