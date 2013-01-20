@@ -19,12 +19,11 @@ class Brain(object):
     self.inputs = inputs
     self.outputs = outputs
     
-    "The parameter seed get's its brain reference modified."
     self.seed = seed
     self.seed.brain = self
     list(seed.outSynapses)[0].brain = self
     self.currentTime = None
-    self.neurons = set([self.seed])
+    self.neurons = set([self.seed.copy()])
     self.events = []
     
     openNeurons = set()
