@@ -20,7 +20,7 @@ class Cell(object):
     raise NotImplementedError
   
   def spawn(self):
-    pass
+    raise NotImplementedError
   
   def pushEvent(self, action, executionTime):
     event = Event(self, action, executionTime)

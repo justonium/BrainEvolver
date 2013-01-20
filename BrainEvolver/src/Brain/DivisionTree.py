@@ -10,13 +10,19 @@ import Synapses
 from MutationTools import *
 
 defaultMutationRate = 0.1
+numSharedRates = 2
+numNeuronNodeRates = 0
+numSynapseNodeRates = 4
 
 class DivisionTree(object):
   
-  def __init__(self, root, dataMutationRates, transformMutationRates):
+  def __init__(self, root, dataMutationRates, transformMutationRates, \
+               sharedRates=zeros(numSharedRates) , otherRates=None):
     self.root = root
     self.dataMutationRates = dataMutationRates
     self.transformMutationRates = transformMutationRates
+    self.sharedRates = sharedRates
+    self.otherRates = otherRates
   
   def mutateData(self, data):
     return mutateArray(data, *self.dataMutationRates)
@@ -26,7 +32,20 @@ class DivisionTree(object):
   
   def spawn(self, root):
     return DivisionTree(root, mutateRates(self.dataMutationRates), \
-                        mutateRates(self.transformMutationRates))
+        mutateRates(self.transformMutationRates), mutateRates(self.sharedRates), \
+        mutateRates(self.otherRates))
+
+class SynapseTree(DivisionTree):
+  
+  def __init__(self, root, dataMutationRates, transformMutationRates, \
+               otherRates=defaultMutationRate*zeros(numSynapseNodeRates)):
+    super(DivisionTree, self).__init__(root, dataMutationRates, transformMutationRates, otherRates)
+
+class NeuronTree(DivisionTree):
+  
+  def __init__(self, root, dataMutationRates, transformMutationRates, \
+               otherRates=defaultMutationRate*zeros(numNeuronNodeRates)):
+    super(DivisionTree, self).__init__(root, dataMutationRates, transformMutationRates, otherRates)
 
 def emptyMutationRates(shape):
   rateArray = defaultMutationRate * ones(shape)
@@ -47,15 +66,38 @@ class DivisionNode(object):
     child.tree = tree
     return child
   
-  def _spawn(self):
-    "This should involve mutations to node fields."
+  def _spawn(self, tree):
     child = self.copy()
-    "This should have a chance of adding a new node."
-    child.left = self.left._spawn() if child.left != None else None
-    child.right = self.right._spawn() if child.right != None else None
+    "Mutate all the shared fields of this node."
+    child.leftTransform = mutateArray(child.leftTransform, tree.transformMutationRates)
+    child.rightTransform = mutateArray(child.rightTransform, tree.transformMutationRates)
+    
+    if (child.complete):
+      if (random.random() < tree.sharedRates[0]):
+        "Become a parent and have 2 leaf children."
+        child.complete = False
+        child.left = self.getLeafNode()
+        child.right = self.getLeafNode()
+        
+    else:
+      if (random.random() < tree.sharedRates[1]):
+        "Delete children and become a leaf."
+        child.left = None
+        child.right = None
+        child.complete = True
+      child.left = self.left._spawn(tree)
+      child.right = self.right._spawn(tree)
+    
+    return child
   
   def copy(self):
     raise NotImplementedError
+  
+  def getLeafNode(self):
+    if (type(self) == NeuronNode):
+      return leafNeuronNode
+    elif (type(self) == SynapseNode):
+      return leafSynapseNode
 
 
 class NeuronNode(DivisionNode):
@@ -64,6 +106,11 @@ class NeuronNode(DivisionNode):
     super(NeuronNode, self).__init__(left, right, complete)
     self.leftTransform = leftTransform
     self.rightTransform = rightTransform
+  
+  def _spawn(self, tree):
+    child = super(DivisionNode, self).spawn(tree)
+    pass
+    return child
   
   def copy(self):
     return NeuronNode(self.left, self.right, self.complete, self.leftTransform, self.rightTransform)
@@ -79,6 +126,52 @@ class SynapseNode(DivisionNode):
     self.symmetric = symmetric
     self.leftTransform = leftTransform
     self.rightTransform = rightTransform
+  
+  def _spawn(self, tree):
+    child = super(DivisionNode, self).spawn(tree)
+    
+    if (random.random() < tree.otherRates[0]):
+      child.sourceCarries.append(0)
+    
+    if (random.random() < tree.otherRates[1]):
+      child.sourceCarries.append(1)
+    
+    if (random.random() < tree.otherRates[2]):
+      child.sinkCarries.append(0)
+    
+    if (random.random() < tree.otherRates[3]):
+      child.sinkCarries.append(1)
+    
+    if (random.random() < tree.otherRates[4]):
+      child.sourceCarries.remove(0)
+    
+    if (random.random() < tree.otherRates[5]):
+      child.sinkCarries.remove(0)
+    
+    if (random.random() < tree.otherRates[6]):
+      index = random.random_integers(len(child.sourceCarries) - 1)
+      child.sourceCarries.remove(index)
+    
+    if (random.random() < tree.otherRates[7]):
+      index = random.random_integers(len(child.sinkCarries) - 1)
+      child.sinkCarries.remove(index)
+    
+    if (random.random() < tree.otherRates[8]):
+      index = random.random_integers(len(child.sourceCarries) - 1)
+      child.sourceCarries = child.sourceCarries[-(index + 1):]
+    
+    if (random.random() < tree.otherRates[9]):
+      index = random.random_integers(len(child.sinkCarries) - 1)
+      child.sinkCarries = child.sinkCarries[-(index + 1):]
+    
+    "do stuff with symmetric"
+    if (random.random() < tree.otherRates[10]):
+      pass
+    
+    if (random.random() < tree.otherRates[11]):
+      pass
+    
+    return child
   
   def copy(self):
     return SynapseNode(self.left, self.right, self.complete, self.sourceCarries, self.sinkCarries, \

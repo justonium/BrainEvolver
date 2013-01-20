@@ -152,7 +152,7 @@ class Neuron(Cell):
     for synapse in self.inSynapses:
       synapse.node = deepcopy(synapse.node)
       branch = synapse.node.sinkCarries[-1]
-      synapse.node.sinkCarries.remove[-1]
+      synapse.node.sinkCarries.remove(-1)
       if (branch == 0):
         left.inSynapses.add(synapse)
         synapse.source = left
@@ -162,7 +162,7 @@ class Neuron(Cell):
     for synapse in self.outSynapses:
       synapse.node = deepcopy(synapse.node)
       branch = synapse.node.sourceCarries[-1]
-      synapse.node.sinkCarries.remove[-1]
+      synapse.node.sinkCarries.remove(-1)
       if (branch == 0):
         left.outSynapses.add(synapse)
         synapse.sink = left

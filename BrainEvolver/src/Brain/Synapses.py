@@ -103,12 +103,11 @@ class Synapse(Cell):
         sigmoid(applyTransform(self.params, self.evolveRateFun))
   
   def divide(self, chemicals):
-    "apply left and right transforms to the data of left and right"
     left = deepcopy(self)
     right = deepcopy(self)
     left.node = self.node.left
     right.node = self.node.right
-    "make transforms use source and sink!"
+    "apply left and right transforms to the data of left and right"
     leftTransformParam = concatenate(self.data, self.source.data, self.sink.data)
     rightTransformParam = concatenate(self.data, self.source.data, self.sink.data)
     left.data = self.data + applyTransform(leftTransformParam, self.node.leftTransform)
