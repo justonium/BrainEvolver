@@ -15,5 +15,5 @@ list(brain.seed.outSynapses)[0].node = SynapseNode(leafSynapseNode, leafSynapseN
 brain.elapseTime(1.0)
 """
 from World.World import World
-world = World()
+world = World((4000, 4000))
 world.simulate()
