@@ -83,7 +83,7 @@ class Neuron(Cell):
     "utilities"
     self.inBuffer = 0
     self.nextEvent = None
-    self.accessDict = { \
+    self._accessDict = { \
         'sensitivity' : lambda : self.data[sensitivity], \
         'bias' : lambda : self.data[bias], \
         'input' : lambda : self.data[input], \
@@ -94,7 +94,7 @@ class Neuron(Cell):
         'fireRateFun' : lambda : self.data[fireRate:fireRateEnd], \
         'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
         }
-    self.writeDict = { \
+    self._writeDict = { \
         'sensitivity' : self.writeValue(sensitivity), \
         'bias' : self.writeValue(bias), \
         'input' : self.writeValue(input), \

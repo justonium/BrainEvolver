@@ -6,6 +6,8 @@ Created on Jan 17, 2013
 
 from Brain import *
 
+from Body.ArrayInterface import *
+
 brain = createEmpty([], [])
 #nnode = NeuronNode(leafNeuronNode, leafNeuronNode, False)
 #nnode.brain = brain
@@ -17,3 +19,5 @@ brain.elapseTime(1.0)
 brain2 = brain.spawn()
 
 brain3 = brain2.spawn()
+
+brain13 = brain3.spawn().spawn().spawn().spawn().spawn().spawn().spawn().spawn().spawn().spawn()

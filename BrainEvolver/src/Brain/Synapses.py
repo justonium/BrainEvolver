@@ -67,7 +67,7 @@ class Synapse(Cell):
     
     "utilities"
     self.nextEvent = None
-    self.accessDict = { \
+    self._accessDict = { \
         'activation' : lambda : self.data[activation], \
         'weight' : lambda : self.data[weight], \
         'evolveRateScale' : lambda : self.data[evolveRateScale], \
@@ -75,7 +75,7 @@ class Synapse(Cell):
         'params' : lambda : self.data[params:paramSize], \
         'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
         }
-    self.writeDict = { \
+    self._writeDict = { \
         'activation' : super(Synapse, self).writeValue(activation), \
         'weight' : self.writeValue(weight), \
         'evolveRateScale' : self.writeValue(evolveRateScale), \
