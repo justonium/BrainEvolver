@@ -6,12 +6,18 @@ Created on Jan 15, 2013
 
 from numpy import *
 
-def createIdentity(dataSize):
+def createIdentityTransform(dataSize):
   return zeros(dataSize, dataSize + 1)
   #return hstack(zeros(dataSize, 1), identity(dataSize))
 
 def applyTransform(data, transform):
   return dot(transform, append(array(1), data))
+
+def createIdentityMap(dataSize):
+  return zeros((2, dataSize))
+
+def applyMap(data, transform):
+  return dot(transform[0,:], data) + transform[1,:]
 
 def transformSize(x):
   return x * (x + 1)
@@ -41,3 +47,8 @@ def rectLinear(z):
 
 def smoothRectLinear(z):
   return log(1.0 + exp(z))
+
+
+
+
+

@@ -19,7 +19,10 @@ evolveRateScale = 2
 "paramSize < dataSize < divisionDataSize"
 numAttributes = 3
 numChemicals = 5
+params = 0
 paramSize = numAttributes + numChemicals
+chemicals = numAttributes
+chemicalsEnd = paramSize
 
 evolveRateSize = reduceSize(paramSize)
 "also used to access data"
@@ -27,8 +30,8 @@ evolveRate = paramSize
 evolveRateEnd = evolveRate + evolveRateSize
 
 dataSize = paramSize + evolveRateSize
-fireTransformWidth = dataSize + 2*Neurons.dataSize
-evolveTransformWidth = dataSize + 2*Neurons.dataSize
+fireTransformWidth = dataSize + 2*Neurons.numChemicals
+evolveTransformWidth = dataSize + 2*Neurons.numChemicals
 fireTransformSize = transformSize(fireTransformWidth)
 evolveTransformSize = transformSize(fireTransformWidth)
 "used to access data only in finalize"
@@ -38,11 +41,13 @@ fireTransformEnd = fireTransform + fireTransformSize
 evolveTransformEnd = evolveTransform + evolveTransformSize
 
 divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
-divisionTransformWidth = divisionDataSize + 2*Neurons.divisionDataSize
 
 
 
 class Synapse(Cell):
+  
+  def copy(self):
+    return Synapse(self.node, self.source, self.sink, self.data.copy())
   
   def __init__(self, node, source, sink, data):
     "structure"
@@ -66,27 +71,29 @@ class Synapse(Cell):
         'activation' : lambda : self.data[activation], \
         'weight' : lambda : self.data[weight], \
         'evolveRateScale' : lambda : self.data[evolveRateScale], \
-        'params' : lambda : self.data[:paramSize], \
+        'chemicals' : lambda : self.data[chemicals:chemicalsEnd], \
+        'params' : lambda : self.data[params:paramSize], \
         'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
         }
     self.writeDict = { \
         'activation' : super(Synapse, self).writeValue(activation), \
         'weight' : self.writeValue(weight), \
         'evolveRateScale' : self.writeValue(evolveRateScale), \
-        'params' : lambda : self.writeValue(0, paramSize), \
+        'chemicals' : self.writeVector(chemicals, chemicalsEnd), \
+        'params' : self.writeVector(params, paramSize), \
         'evolveRateFun' : self.writeVector(evolveRate, evolveRateSize) \
         }
   
   def fire(self, source):
     sink = self.sink if source == self.source else self.source
     sink.inBuffer += self.weight * self.activation
-    transformParam = concatenate(self.data, source.data, sink.data)
+    transformParam = concatenate(self.data, source.chemicals, sink.chemicals)
     self.data += applyTransform(transformParam, self.fireTransform)
     self.nextEvent.active = False
     self.schedule()
   
   def evolve(self, time):
-    transformParam = concatenate(self.data, self.source.data, self.sink.data)
+    transformParam = concatenate(self.data, self.source.chemicals, self.sink.chemicals)
     self.data += applyTransform(transformParam, self.evolveTransform)
     self.schedule()
   
@@ -108,10 +115,8 @@ class Synapse(Cell):
     left.node = self.node.left
     right.node = self.node.right
     "apply left and right transforms to the data of left and right"
-    leftTransformParam = concatenate(self.data, self.source.data, self.sink.data)
-    rightTransformParam = concatenate(self.data, self.source.data, self.sink.data)
-    left.data = self.data + applyTransform(leftTransformParam, self.node.leftTransform)
-    right.data = self.data + applyTransform(rightTransformParam, self.node.rightTransform)
+    left.data = self.data + applyTransform(self.data, self.node.leftTransform)
+    right.data = self.data + applyTransform(self.data, self.node.rightTransform)
   
   def finalize(self):
     if (self.node.symmetric):
@@ -122,13 +127,14 @@ class Synapse(Cell):
     self.evolveTransform = \
         rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth)
     self.data = self.data[:dataSize]
-    self.node = None
+    "We don't need this node anymore."
+    if (self.node.tree == None):
+      self.node = None
   
+  "Should only be called on a root."
   def spawn(self):
     data = self.node.tree.mutateData(self.data)
     return Synapse(self.node.spawn(), self.source, self.sink, data)
-
-
 
 
 

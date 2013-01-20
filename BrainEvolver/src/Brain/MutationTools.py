@@ -5,6 +5,7 @@ Created on Jan 19, 2013
 '''
 
 from numpy import *
+import DivisionTree
 
 def mutateValue(number, driftRate, zeroRate, nonzeroRate):
   if (number == 0):
@@ -21,7 +22,7 @@ def mutateValue(number, driftRate, zeroRate, nonzeroRate):
 _mutateArrayFun = vectorize(mutateValue)
 
 def mutateArray(array, driftRates, zeroRates, nonzeroRates):
-  return _mutateArrayFun(array, driftRates, zeroRates, nonzeroRates)    
+  return _mutateArrayFun(array, driftRates, zeroRates, nonzeroRates)
 
 
 
@@ -32,6 +33,12 @@ _mutateRatesFun = vectorize(mutateRate)
 
 def mutateRates(rates):
   return _mutateRatesFun(rates)
+
+
+
+def emptyMutationRates(shape):
+  rateArray = DivisionTree.defaultMutationRate * ones(shape)
+  return (rateArray, rateArray, rateArray)
 
 
 

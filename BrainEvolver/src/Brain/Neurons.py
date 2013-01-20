@@ -22,6 +22,8 @@ numAttributes = 5
 numChemicals = 5
 params = 0
 paramSize = numAttributes + numChemicals
+chemicals = numAttributes
+chemicalsEnd = paramSize
 
 fireRateSize = reduceSize(paramSize)
 evolveRateSize = reduceSize(paramSize)
@@ -41,11 +43,21 @@ fireTransformEnd = fireTransform + fireTransformSize
 evolveTransformEnd = evolveTransform + evolveTransformSize
 
 divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
-divisionTransformWidth = divisionDataSize
 
 
 
 class Neuron(Cell):
+  
+  def copy(self):
+    inSynapses = set()
+    outSynapses = set()
+    for synapse in self.inSynapses.union(self.outSynapses):
+      child = synapse.copy()
+      if (synapse in self.inSynapses):
+        inSynapses.add(child)
+      if (synapse in self.outSynapses):
+        outSynapses.add(child)
+    return Neuron(self.node, inSynapses, outSynapses, self.data.copy())
   
   def __init__(self, node, inSynapses, outSynapses, data):
     "structure"
@@ -77,7 +89,8 @@ class Neuron(Cell):
         'input' : lambda : self.data[input], \
         'fireRateScale' : lambda : self.data[fireRateScale], \
         'evolveRateScale' : lambda : self.data[evolveRateScale], \
-        'params' : lambda : self.data[:paramSize], \
+        'chemicals' : lambda : self.data[chemicals:chemicalsEnd], \
+        'params' : lambda : self.data[params:paramSize], \
         'fireRateFun' : lambda : self.data[fireRate:fireRateEnd], \
         'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
         }
@@ -87,9 +100,10 @@ class Neuron(Cell):
         'input' : self.writeValue(input), \
         'fireRateScale' : self.writeValue(fireRateScale), \
         'evolveRateScale' : self.writeValue(evolveRateScale), \
-        'params' : lambda : self.writeValue(0, paramSize), \
-        'fireRateFun' : self.writeVector(fireRate, fireRateSize), \
-        'evolveRateFun' : self.writeVector(evolveRate, evolveRateSize) \
+        'chemicals' : self.writeVector(chemicals, chemicalsEnd), \
+        'params' : self.writeVector(params, paramSize), \
+        'fireRateFun' : self.writeVector(fireRate, fireRateEnd), \
+        'evolveRateFun' : self.writeVector(evolveRate, evolveRateEnd) \
     }
   
   def flush(self):
@@ -132,8 +146,9 @@ class Neuron(Cell):
   
   def divide(self):
     "initialize children"
-    left = deepcopy(self)
-    right = deepcopy(self)
+    "This copying business isn't so fast."
+    left = self.copy()
+    right = self.copy()
     left.inSynapses = set()
     left.outSynapses = set()
     right.inSynapses = set()
@@ -171,8 +186,8 @@ class Neuron(Cell):
         synapse.sink = right
         
     "apply left and right transforms to the data of left and right"
-    left.data = self.data + applyTransform(self.data, self.node.leftTransform)
-    right.data = self.data + applyTransform(self.data, self.node.rightTransform)
+    left.data = self.data + applyMap(self.data, self.node.leftTransform)
+    right.data = self.data + applyMap(self.data, self.node.rightTransform)
     
     return ((left, right), synapse)
   
@@ -184,20 +199,46 @@ class Neuron(Cell):
     self.data = self.data[:dataSize]
     for synapse in self.outSynapses:
       synapse.finalize()
-    self.node = None
+    "We don't need this node anymore."
+    if (self.node.tree == None):
+      self.node = None
   
   "should only be called on a seed neuron"
   def spawn(self):
     inSynapses = set()
     outSynapses = set()
-    for synapse in self.inSynapses:
-      inSynapses.add(synapse.spawn())
-    for synapse in self.outSynapses:
-      outSynapses.add(synapse.spawn())
-    data = self.node.tree.mutateData()
+    for synapse in self.inSynapses.union(self.outSynapses):
+      child = synapse.spawn()
+      if (synapse in self.inSynapses):
+        inSynapses.add(child)
+      if (synapse in self.outSynapses):
+        outSynapses.add(child)
+    data = self.node.tree.mutateData(self.data)
     child = Neuron(self.node.spawn(), inSynapses, outSynapses, data)
     return child
 
+
+class InputNeuron(Neuron):
+  
+  def updateRates(self):
+    fireRate = self.fireRate
+    super(InputNeuron, self).updateRates()
+    self.fireRate = fireRate
+  
+  def spawn(self, node):
+    inSynapses = set()
+    outSynapses = self.outSynapses
+    data = node.tree.mutateData(self.data)
+    child = Neuron(None, inSynapses, outSynapses, data)
+    return child
+
+class OutputNeuron(Neuron):
+  
+  def fire(self):
+    pass
+  
+  def evolve(self):
+    pass
 
 
 

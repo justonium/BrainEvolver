@@ -12,12 +12,12 @@ from MutationTools import *
 defaultMutationRate = 0.1
 numSharedRates = 2
 numNeuronNodeRates = 0
-numSynapseNodeRates = 4
+numSynapseNodeRates = 12
 
 class DivisionTree(object):
   
   def __init__(self, root, dataMutationRates, transformMutationRates, \
-               sharedRates=zeros(numSharedRates) , otherRates=None):
+               otherRates=None, sharedRates=zeros(numSharedRates)):
     self.root = root
     self.dataMutationRates = dataMutationRates
     self.transformMutationRates = transformMutationRates
@@ -35,33 +35,32 @@ class DivisionTree(object):
         mutateRates(self.transformMutationRates), mutateRates(self.sharedRates), \
         mutateRates(self.otherRates))
 
-class SynapseTree(DivisionTree):
-  
-  def __init__(self, root, dataMutationRates, transformMutationRates, \
-               otherRates=defaultMutationRate*zeros(numSynapseNodeRates)):
-    super(DivisionTree, self).__init__(root, dataMutationRates, transformMutationRates, otherRates)
-
 class NeuronTree(DivisionTree):
   
   def __init__(self, root, dataMutationRates, transformMutationRates, \
                otherRates=defaultMutationRate*zeros(numNeuronNodeRates)):
-    super(DivisionTree, self).__init__(root, dataMutationRates, transformMutationRates, otherRates)
+    super(NeuronTree, self).__init__(root, dataMutationRates, transformMutationRates, otherRates)
 
-def emptyMutationRates(shape):
-  rateArray = defaultMutationRate * ones(shape)
-  return (rateArray, rateArray, rateArray)
+class SynapseTree(DivisionTree):
+  
+  def __init__(self, root, dataMutationRates, transformMutationRates, \
+               otherRates=defaultMutationRate*zeros(numSynapseNodeRates)):
+    super(SynapseTree, self).__init__(root, dataMutationRates, transformMutationRates, otherRates)
 
 
 class DivisionNode(object):
   
-  def __init__(self, left, right, complete, tree=None):
+  def __init__(self, left, right, complete, leftTransform, rightTransform, tree=None):
     self.left = left
     self.right = right
     self.complete = complete
+    self.leftTransform = leftTransform
+    self.rightTransform = rightTransform
+    self.tree = None
   
   "Should only be called on a root."
   def spawn(self):
-    child = self._spawn()
+    child = self._spawn(self.tree)
     tree = self.tree.spawn(child)
     child.tree = tree
     return child
@@ -69,8 +68,8 @@ class DivisionNode(object):
   def _spawn(self, tree):
     child = self.copy()
     "Mutate all the shared fields of this node."
-    child.leftTransform = mutateArray(child.leftTransform, tree.transformMutationRates)
-    child.rightTransform = mutateArray(child.rightTransform, tree.transformMutationRates)
+    child.leftTransform = mutateArray(child.leftTransform, *tree.transformMutationRates)
+    child.rightTransform = mutateArray(child.rightTransform, *tree.transformMutationRates)
     
     if (child.complete):
       if (random.random() < tree.sharedRates[0]):
@@ -102,13 +101,11 @@ class DivisionNode(object):
 
 class NeuronNode(DivisionNode):
   
-  def __init__(self, left, right, complete, leftTransform=None, rightTransform=None):
-    super(NeuronNode, self).__init__(left, right, complete)
-    self.leftTransform = leftTransform
-    self.rightTransform = rightTransform
+  def __init__(self, left, right, complete, leftTransform, rightTransform):
+    super(NeuronNode, self).__init__(left, right, complete, leftTransform, rightTransform)
   
   def _spawn(self, tree):
-    child = super(DivisionNode, self).spawn(tree)
+    child = super(NeuronNode, self)._spawn(tree)
     pass
     return child
   
@@ -118,17 +115,15 @@ class NeuronNode(DivisionNode):
 
 class SynapseNode(DivisionNode):
   
-  def __init__(self, left, right, complete, sourceCarries=[], sinkCarries=[], symmetric=False, \
-               leftTransform=None, rightTransform=None):
-    super(SynapseNode, self).__init__(left, right, complete)
+  def __init__(self, left, right, complete, leftTransform, rightTransform, \
+               sourceCarries=[], sinkCarries=[], symmetric=False):
+    super(SynapseNode, self).__init__(left, right, complete, leftTransform, rightTransform)
     self.sourceCarries = sourceCarries
     self.sinkCarries = sinkCarries
     self.symmetric = symmetric
-    self.leftTransform = leftTransform
-    self.rightTransform = rightTransform
   
   def _spawn(self, tree):
-    child = super(DivisionNode, self).spawn(tree)
+    child = super(SynapseNode, self)._spawn(tree)
     
     if (random.random() < tree.otherRates[0]):
       child.sourceCarries.append(0)
@@ -174,27 +169,35 @@ class SynapseNode(DivisionNode):
     return child
   
   def copy(self):
-    return SynapseNode(self.left, self.right, self.complete, self.sourceCarries, self.sinkCarries, \
-                       self.symmetric, self.leftTransform, self.rightTransform)
+    return SynapseNode(self.left, self.right, self.complete, self.leftTransform, self.rightTransform, \
+                       self.sourceCarries, self.sinkCarries, self.symmetric)
   
   def isReady(self):
     return not (self.sourceCarries and not self.source.node.complete) \
       and not (self.sinkCarries and not self.sink.node.complete)
 
-leafNeuronNode = NeuronNode(None, None, True)
+def defaultNeuronTransform():
+  return zeros((2, Neurons.divisionDataSize))
+def defaultSynapseTransform():
+  return zeros((2, Synapses.divisionDataSize))
 
-leafSynapseNode = SynapseNode(None, None, True)
+leafNeuronNode = NeuronNode(None, None, True, defaultNeuronTransform(), defaultNeuronTransform())
+
+leafSynapseNode = SynapseNode(None, None, True, defaultSynapseTransform(), defaultSynapseTransform())
 
 def rootNeuronNode():
-  node = NeuronNode(None, None, True)
-  node.tree = DivisionTree(node, emptyMutationRates((Neurons.divisionDataSize)), \
-      emptyMutationRates((Neurons.divisionTransformWidth, Neurons.divisionTransformWidth + 1)))
+  node = NeuronNode(None, None, True, defaultNeuronTransform(), defaultNeuronTransform())
+  node.tree = SynapseTree(node, emptyMutationRates((Neurons.divisionDataSize)), \
+      emptyMutationRates((2, Neurons.divisionDataSize)))
   return node
 
 def rootSynapseNode():
-  node = SynapseNode(None, None, True)
-  node.tree = DivisionTree(node, emptyMutationRates((Synapses.divisionDataSize)), \
-      emptyMutationRates((Neurons.divisionTransformWidth, Synapses.divisionTransformWidth + 1)))
+  node = SynapseNode(None, None, True, defaultSynapseTransform(), defaultSynapseTransform())
+  node.tree = SynapseTree(node, emptyMutationRates((Synapses.divisionDataSize)), \
+      emptyMutationRates((2, Synapses.divisionDataSize)))
   return node
+
+
+
 
 
