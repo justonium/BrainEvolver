@@ -6,9 +6,9 @@ Created on Dec 30, 2012
 
 from numpy import *
 from heapq import *
-from copy import deepcopy
 from Cell import Cell
 import Neurons
+import DivisionTree
 from Tools import *
 
 "main attributes"
@@ -115,8 +115,10 @@ class Synapse(Cell):
     left.node = self.node.left
     right.node = self.node.right
     "apply left and right transforms to the data of left and right"
-    left.data = self.data + applyTransform(self.data, self.node.leftTransform)
-    right.data = self.data + applyTransform(self.data, self.node.rightTransform)
+    left.data = self.data + applyMap(self.data, self.node.leftTransform)
+    right.data = self.data + applyMap(self.data, self.node.rightTransform)
+    
+    return (left, right)
   
   def finalize(self):
     if (self.node.symmetric):
@@ -132,8 +134,10 @@ class Synapse(Cell):
       self.node = None
   
   def isReady(self):
-    return not (self.node.sourceCarries and not self.source.node.complete) \
-      and not (self.node.sinkCarries and not self.sink.node.complete)
+    sourceComplete = self.source.node.complete if type(self.source) == 'Neuron' else False
+    sinkComplete = self.sink.node.complete if type(self.sink) == 'Neuron' else False
+    return not (self.node.sourceCarries and not sourceComplete \
+      or self.node.sinkCarries and not sinkComplete)
   
   "Should only be called on a root."
   def spawn(self):
@@ -142,7 +146,11 @@ class Synapse(Cell):
 
 
 
+def defaultSynapseTransform():
+  return zeros((2, divisionDataSize))
 
+def createRootSynapse():
+  return Synapse(DivisionTree.rootSynapseNode(), None, None, zeros(divisionDataSize))
 
 
 

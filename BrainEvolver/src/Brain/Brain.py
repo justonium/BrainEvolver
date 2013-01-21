@@ -6,11 +6,11 @@ Created on Dec 26, 2012
 
 from numpy import *
 from heapq import *
+from DivisionTree import *
 import Synapses
 from Synapses import Synapse
 import Neurons
 from Neurons import Neuron, InputNeuron, OutputNeuron
-from DivisionTree import *
 
 class Brain(object):
   
@@ -64,17 +64,12 @@ class Brain(object):
       #divide all incomplete neurons
       for curr in openNeurons.copy():
         openNeurons.remove(curr)
-        children, synapse = neuron.divide()
+        children = curr.divide()
         for child in children:
           if (child.node.complete):
             closedNeurons.add(child)
           else:
             openNeurons.add(child)
-        if (synapse != None and not synapse.node.complete):
-          if (synapse.isReady()):
-            openSynapses.add(synapse)
-          else:
-            closedSynapses.add(synapse)
     
     self.neurons = closedNeurons
     
@@ -138,13 +133,17 @@ inputs and outputs must be lists of some sort (they could be numpy arrays).
 '''
 def createEmpty(inputs, outputs):
   "Create isolated seed."
-  synapse = Synapse(rootSynapseNode(), None, None, zeros(Synapses.divisionDataSize))
-  neuron = Neuron(rootNeuronNode(), [synapse], [synapse], zeros(Neurons.divisionDataSize))
+  synapse = Synapses.createRootSynapse()
+  
+  inputSynapses = [Synapses.createRootSynapse() for i in range(len(inputs))]
+  outputSynapses = [Synapses.createRootSynapse() for i in range(len(outputs))]
+  
+  neuron = Neurons.createRootNeuron(inputSynapses + [synapse], outputSynapses + [synapse])
   
   "Connect seed to inputs and outputs."
-  inputNeurons = [InputNeuron(None, None, None, zeros(Neurons.divisionDataSize)) \
+  inputNeurons = [InputNeuron(None, [], inputSynapses, zeros(Neurons.divisionDataSize)) \
                   for i in range(len(inputs))]
-  outputNeurons = [OutputNeuron(None, None, None, zeros(Neurons.divisionDataSize)) \
+  outputNeurons = [OutputNeuron(None, outputSynapses, [], zeros(Neurons.divisionDataSize)) \
                    for i in range(len(outputs))]
   
   "Make and start brain."

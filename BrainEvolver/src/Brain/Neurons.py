@@ -7,8 +7,8 @@ from numpy import *
 from heapq import *
 from Cell import Cell
 import Synapses
+import DivisionTree
 from Tools import *
-from copy import deepcopy
 
 '''main attributes'''
 sensitivity = 0
@@ -158,7 +158,7 @@ class Neuron(Cell):
     
     "carry synapses to children"
     for synapse in self.inSynapses:
-      synapse.node = deepcopy(synapse.node)
+      synapse.node = synapse.node.copy()
       if (synapse.node.sinkCarries):
         branch = synapse.node.sinkCarries[-1]
         del synapse.node.sinkCarries[-1]
@@ -171,7 +171,7 @@ class Neuron(Cell):
         right.inSynapses.add(synapse)
         synapse.source = right
     for synapse in self.outSynapses:
-      synapse.node = deepcopy(synapse.node)
+      synapse.node = synapse.node.copy()
       if (synapse.node.sourceCarries):
         branch = synapse.node.sourceCarries[-1]
         del synapse.node.sourceCarries[-1]
@@ -187,6 +187,8 @@ class Neuron(Cell):
     "apply left and right transforms to the data of left and right"
     left.data = self.data + applyMap(self.data, self.node.leftTransform)
     right.data = self.data + applyMap(self.data, self.node.rightTransform)
+    
+    return (left, right)
     
     return ((left, right), synapse)
   
@@ -219,6 +221,9 @@ class Neuron(Cell):
 
 class InputNeuron(Neuron):
   
+  def __init__(self, node, inSynapses, outSynapses, data):
+    super(InputNeuron, self).__init__(node, inSynapses, outSynapses, data)
+  
   def updateRates(self):
     fireRate = self.fireRate
     super(InputNeuron, self).updateRates()
@@ -228,7 +233,7 @@ class InputNeuron(Neuron):
     inSynapses = set()
     outSynapses = self.outSynapses
     data = node.tree.mutateData(self.data)
-    child = Neuron(None, inSynapses, outSynapses, data)
+    child = InputNeuron(None, inSynapses, outSynapses, data)
     return child
 
 class OutputNeuron(Neuron):
@@ -240,6 +245,12 @@ class OutputNeuron(Neuron):
     pass
 
 
+
+def defaultNeuronTransform():
+  return zeros((2, divisionDataSize))
+
+def createRootNeuron(inSynapses, outSynapses):
+  return Neuron(DivisionTree.rootNeuronNode(), inSynapses, outSynapses, zeros(divisionDataSize))
 
 
 

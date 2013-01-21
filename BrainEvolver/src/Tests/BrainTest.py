@@ -4,19 +4,21 @@ Created on Jan 17, 2013
 @author: Justin
 '''
 
+import Brain
+from Brain import Neuron
+from Brain import Synapse
+
 from Brain import *
 
-from Body.ArrayInterface import *
-
-brain = createEmpty([], [])
+brain = createEmpty([0], [0])
 #nnode = NeuronNode(leafNeuronNode, leafNeuronNode, False)
 #nnode.brain = brain
 #brain.seed.node = nnode
 #list(brain.seed.outSynapses)[0].node = SynapseNode(leafSynapseNode, leafSynapseNode, False)
 
-brain.elapseTime(1.0)
+brain.elapseTime(1.0, [1])
 
 for i in range(100):
   brain = brain.spawn()
-
-print brain.numNeurons()
+  print 'generation: ', i
+  print 'number of neurons: ', brain.numNeurons()
