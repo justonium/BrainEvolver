@@ -156,18 +156,14 @@ class Neuron(Cell):
     left.node = self.node.left
     right.node = self.node.right
     
-    "create new synapse"
-    synapse = self.node.synapse
-    left.outSynapses.add(synapse)
-    right.inSynapses.add(synapse)
-    synapse.source = left
-    synapse.sink = right
-    
     "carry synapses to children"
     for synapse in self.inSynapses:
       synapse.node = deepcopy(synapse.node)
-      branch = synapse.node.sinkCarries[-1]
-      synapse.node.sinkCarries.remove(-1)
+      if (synapse.node.sinkCarries):
+        branch = synapse.node.sinkCarries[-1]
+        del synapse.node.sinkCarries[-1]
+      else:
+        branch = random.random_integers(0, 1)
       if (branch == 0):
         left.inSynapses.add(synapse)
         synapse.source = left
@@ -176,8 +172,11 @@ class Neuron(Cell):
         synapse.source = right
     for synapse in self.outSynapses:
       synapse.node = deepcopy(synapse.node)
-      branch = synapse.node.sourceCarries[-1]
-      synapse.node.sinkCarries.remove(-1)
+      if (synapse.node.sourceCarries):
+        branch = synapse.node.sourceCarries[-1]
+        del synapse.node.sourceCarries[-1]
+      else:
+        branch = random.random_integers(0, 1)
       if (branch == 0):
         left.outSynapses.add(synapse)
         synapse.sink = left

@@ -17,7 +17,7 @@ numSynapseNodeRates = 12
 class DivisionTree(object):
   
   def __init__(self, root, dataMutationRates, transformMutationRates, \
-               otherRates=None, sharedRates=zeros(numSharedRates)):
+               otherRates=None, sharedRates=defaultMutationRate*ones(numSharedRates)):
     self.root = root
     self.dataMutationRates = dataMutationRates
     self.transformMutationRates = transformMutationRates
@@ -38,13 +38,13 @@ class DivisionTree(object):
 class NeuronTree(DivisionTree):
   
   def __init__(self, root, dataMutationRates, transformMutationRates, \
-               otherRates=defaultMutationRate*zeros(numNeuronNodeRates)):
+               otherRates=defaultMutationRate*ones(numNeuronNodeRates)):
     super(NeuronTree, self).__init__(root, dataMutationRates, transformMutationRates, otherRates)
 
 class SynapseTree(DivisionTree):
   
   def __init__(self, root, dataMutationRates, transformMutationRates, \
-               otherRates=defaultMutationRate*zeros(numSynapseNodeRates)):
+               otherRates=defaultMutationRate*ones(numSynapseNodeRates)):
     super(SynapseTree, self).__init__(root, dataMutationRates, transformMutationRates, otherRates)
 
 
@@ -97,6 +97,9 @@ class DivisionNode(object):
       return leafNeuronNode
     elif (type(self) == SynapseNode):
       return leafSynapseNode
+  
+  def treeSize(self):
+    return 1 + 0 if self.complete else self.left.treeSize() + self.right.treeSize()
 
 
 class NeuronNode(DivisionNode):
@@ -106,7 +109,7 @@ class NeuronNode(DivisionNode):
   
   def _spawn(self, tree):
     child = super(NeuronNode, self)._spawn(tree)
-    pass
+    
     return child
   
   def copy(self):
@@ -137,27 +140,31 @@ class SynapseNode(DivisionNode):
     if (random.random() < tree.otherRates[3]):
       child.sinkCarries.append(1)
     
-    if (random.random() < tree.otherRates[4]):
-      child.sourceCarries.remove(0)
+    if (child.sourceCarries):
+      
+      if (random.random() < tree.otherRates[4]):
+        del child.sourceCarries[0]
+      
+      elif (random.random() < tree.otherRates[6]):
+        index = random.random_integers(0, len(child.sourceCarries) - 1)
+        del child.sourceCarries[index]
+      
+      elif (random.random() < tree.otherRates[8]):
+        index = random.random_integers(0, len(child.sourceCarries) - 1)
+        child.sourceCarries = child.sourceCarries[-(index + 1):]
     
-    if (random.random() < tree.otherRates[5]):
-      child.sinkCarries.remove(0)
-    
-    if (random.random() < tree.otherRates[6]):
-      index = random.random_integers(len(child.sourceCarries) - 1)
-      child.sourceCarries.remove(index)
-    
-    if (random.random() < tree.otherRates[7]):
-      index = random.random_integers(len(child.sinkCarries) - 1)
-      child.sinkCarries.remove(index)
-    
-    if (random.random() < tree.otherRates[8]):
-      index = random.random_integers(len(child.sourceCarries) - 1)
-      child.sourceCarries = child.sourceCarries[-(index + 1):]
-    
-    if (random.random() < tree.otherRates[9]):
-      index = random.random_integers(len(child.sinkCarries) - 1)
-      child.sinkCarries = child.sinkCarries[-(index + 1):]
+    if (child.sinkCarries):
+      
+      if (random.random() < tree.otherRates[5]):
+        del child.sinkCarries[0]
+      
+      elif (random.random() < tree.otherRates[7]):
+        index = random.random_integers(0, len(child.sinkCarries) - 1)
+        del child.sinkCarries[index]
+      
+      elif (random.random() < tree.otherRates[9]):
+        index = random.random_integers(0, len(child.sinkCarries) - 1)
+        child.sinkCarries = child.sinkCarries[-(index + 1):]
     
     "do stuff with symmetric"
     if (random.random() < tree.otherRates[10]):
@@ -171,10 +178,6 @@ class SynapseNode(DivisionNode):
   def copy(self):
     return SynapseNode(self.left, self.right, self.complete, self.leftTransform, self.rightTransform, \
                        self.sourceCarries, self.sinkCarries, self.symmetric)
-  
-  def isReady(self):
-    return not (self.sourceCarries and not self.source.node.complete) \
-      and not (self.sinkCarries and not self.sink.node.complete)
 
 def defaultNeuronTransform():
   return zeros((2, Neurons.divisionDataSize))

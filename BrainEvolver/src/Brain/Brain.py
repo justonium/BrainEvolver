@@ -42,7 +42,7 @@ class Brain(object):
       #place synapses in appropriate set
       for synapse in neuron.outSynapses:
         if (not synapse.node.complete):
-          if (synapse.node.isReady()):
+          if (synapse.isReady()):
             openSynapses.add(synapse)
           else:
             closedSynapses.add(synapse)
@@ -56,7 +56,7 @@ class Brain(object):
           children = curr.divide()
           for child in children:
             if (not child.node.complete):
-              if (child.node.isReady()):
+              if (child.isReady()):
                 openSynapses.add(child)
               else:
                 closedSynapses.add(child)
@@ -71,7 +71,7 @@ class Brain(object):
           else:
             openNeurons.add(child)
         if (synapse != None and not synapse.node.complete):
-          if (synapse.node.isReady()):
+          if (synapse.isReady()):
             openSynapses.add(synapse)
           else:
             closedSynapses.add(synapse)
@@ -117,6 +117,14 @@ class Brain(object):
     childSeed = self.seed.spawn()
     return Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
                  inputNeurons, outputNeurons)
+  
+  '''
+  Returns the number of neurons in the brain.
+  This doesn't include input neurons or output neurons, whose numbers
+  are equal to the sizes of the corresponding input and output arrays.
+  '''
+  def numNeurons(self):
+    return self.seed.node.treeSize()
 
 
 

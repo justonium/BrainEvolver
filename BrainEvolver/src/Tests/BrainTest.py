@@ -16,8 +16,7 @@ brain = createEmpty([], [])
 
 brain.elapseTime(1.0)
 
-brain2 = brain.spawn()
+for i in range(100):
+  brain = brain.spawn()
 
-brain3 = brain2.spawn()
-
-brain13 = brain3.spawn().spawn().spawn().spawn().spawn().spawn().spawn().spawn().spawn().spawn()
+print brain.numNeurons()

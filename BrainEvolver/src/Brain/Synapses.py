@@ -109,9 +109,9 @@ class Synapse(Cell):
     self.evolveRate = self.evolveRateScale * \
         sigmoid(applyTransform(self.params, self.evolveRateFun))
   
-  def divide(self, chemicals):
-    left = deepcopy(self)
-    right = deepcopy(self)
+  def divide(self):
+    left = self.copy()
+    right = self.copy()
     left.node = self.node.left
     right.node = self.node.right
     "apply left and right transforms to the data of left and right"
@@ -130,6 +130,10 @@ class Synapse(Cell):
     "We don't need this node anymore."
     if (self.node.tree == None):
       self.node = None
+  
+  def isReady(self):
+    return not (self.node.sourceCarries and not self.source.node.complete) \
+      and not (self.node.sinkCarries and not self.sink.node.complete)
   
   "Should only be called on a root."
   def spawn(self):
