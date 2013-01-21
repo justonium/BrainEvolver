@@ -18,7 +18,7 @@ evolveRateScale = 2
 
 "paramSize < dataSize < divisionDataSize"
 numAttributes = 3
-numChemicals = 5
+numChemicals = 3
 params = 0
 paramSize = numAttributes + numChemicals
 chemicals = numAttributes

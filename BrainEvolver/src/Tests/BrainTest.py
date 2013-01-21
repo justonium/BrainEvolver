@@ -22,3 +22,4 @@ for i in range(100):
   brain = brain.spawn()
   print 'generation: ', i
   print 'number of neurons: ', brain.numNeurons()
+  print 'number of synapses: ', brain.numSynapses()

@@ -120,7 +120,19 @@ class Brain(object):
   '''
   def numNeurons(self):
     return self.seed.node.treeSize()
-
+  
+  '''
+  This includes, but is not limited to, the input and output synapses.
+  '''
+  def numSynapses(self):
+    return sum(map(lambda synapse : synapse.node.treeSize(), \
+                  list(self.seed.inSynapses.union(self.seed.outSynapses))))
+  
+  def numInputSynapses(self):
+    return sum(map(lambda neuron : list(neuron.outSynapses)[0].node.treeSize(), self.inputNeurons))
+  
+  def numOutputSynapses(self):
+    return sum(map(lambda neuron : list(neuron.inSynapses)[0].node.treeSize(), self.outputNeurons))
 
 
 "takes two brains and returns a child brain"

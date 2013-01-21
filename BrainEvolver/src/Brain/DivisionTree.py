@@ -101,7 +101,7 @@ class DivisionNode(object):
       return leafSynapseNode
   
   def treeSize(self):
-    return 1 + 0 if self.complete else self.left.treeSize() + self.right.treeSize()
+    return 1 if self.complete else self.left.treeSize() + self.right.treeSize()
 
 
 class NeuronNode(DivisionNode):
