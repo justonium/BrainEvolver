@@ -10,7 +10,7 @@ from Brain import Synapse
 
 from Brain import *
 
-brain = createEmpty([0], [0])
+brain = createEmpty(range(1), range(1))
 #nnode = NeuronNode(leafNeuronNode, leafNeuronNode, False)
 #nnode.brain = brain
 #brain.seed.node = nnode
@@ -21,5 +21,5 @@ for i in range(100):
   print 'generation: ', i
   print 'number of neurons: ', brain.numNeurons()
   print 'number of synapses: ', brain.numSynapses()
-  brain.elapseTime(1.0, [1])
+  brain.elapseTime(1.0, range(1))
   print 'outputs: ', brain.outputs

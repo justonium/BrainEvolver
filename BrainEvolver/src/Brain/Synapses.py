@@ -89,7 +89,8 @@ class Synapse(Cell):
     sink.inBuffer += self.weight * self.activation
     transformParam = concatenate((self.data, source.chemicals, sink.chemicals))
     self.data += applyTransform(transformParam, self.fireTransform)
-    self.nextEvent.active = False
+    if (self.nextEvent != None):
+      self.nextEvent.active = False
     self.schedule()
   
   def evolve(self):
