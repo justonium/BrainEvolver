@@ -16,10 +16,10 @@ brain = createEmpty([0], [0])
 #brain.seed.node = nnode
 #list(brain.seed.outSynapses)[0].node = SynapseNode(leafSynapseNode, leafSynapseNode, False)
 
-brain.elapseTime(1.0, [1])
-
 for i in range(100):
   brain = brain.spawn()
   print 'generation: ', i
   print 'number of neurons: ', brain.numNeurons()
   print 'number of synapses: ', brain.numSynapses()
+  brain.elapseTime(1.0, [1])
+  print 'outputs: ', brain.outputs

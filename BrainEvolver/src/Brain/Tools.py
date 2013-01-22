@@ -19,14 +19,18 @@ def createIdentityMap(dataSize):
 def applyMap(data, transform):
   return dot(transform[0,:], data) + transform[1,:]
 
-def transformSize(x):
-  return x * (x + 1)
+def transformSize(width, height=None):
+  if (height == None):
+    height = width
+  return height * (width + 1)
 
 def reduceSize(x):
   return x + 1
 
-def rollTransform(vector, width):
-  return reshape(vector, [width, width + 1])
+def rollTransform(vector, width, height=None):
+  if (height == None):
+    height = width
+  return reshape(vector, [height, width + 1])
 
 
 

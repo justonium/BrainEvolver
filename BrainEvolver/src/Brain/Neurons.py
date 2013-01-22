@@ -57,11 +57,11 @@ class Neuron(Cell):
         inSynapses.add(child)
       if (synapse in self.outSynapses):
         outSynapses.add(child)
-    return Neuron(self.node, inSynapses, outSynapses, self.data.copy())
+    return Neuron(self.node, inSynapses, outSynapses, self.data.copy(), self.brain)
   
-  def __init__(self, node, inSynapses, outSynapses, data):
+  def __init__(self, node, inSynapses, outSynapses, data, brain=None):
     "structure"
-    self.brain = None
+    self.brain = brain
     self.inSynapses = set(inSynapses)
     self.outSynapses = set(outSynapses)
     for synapse in inSynapses:

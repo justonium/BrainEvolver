@@ -32,8 +32,8 @@ evolveRateEnd = evolveRate + evolveRateSize
 dataSize = paramSize + evolveRateSize
 fireTransformWidth = dataSize + 2*Neurons.numChemicals
 evolveTransformWidth = dataSize + 2*Neurons.numChemicals
-fireTransformSize = transformSize(fireTransformWidth)
-evolveTransformSize = transformSize(fireTransformWidth)
+fireTransformSize = transformSize(fireTransformWidth, dataSize)
+evolveTransformSize = transformSize(fireTransformWidth, dataSize)
 "used to access data only in finalize"
 fireTransform = dataSize
 evolveTransform = dataSize + fireTransformSize
@@ -47,11 +47,11 @@ divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
 class Synapse(Cell):
   
   def copy(self):
-    return Synapse(self.node, self.source, self.sink, self.data.copy())
+    return Synapse(self.node, self.source, self.sink, self.data.copy(), self.brain)
   
-  def __init__(self, node, source, sink, data):
+  def __init__(self, node, source, sink, data, brain=None):
     "structure"
-    self.brain = None
+    self.brain = brain
     self.source = source
     self.sink = sink
     
@@ -87,13 +87,13 @@ class Synapse(Cell):
   def fire(self, source):
     sink = self.sink if source == self.source else self.source
     sink.inBuffer += self.weight * self.activation
-    transformParam = concatenate(self.data, source.chemicals, sink.chemicals)
+    transformParam = concatenate((self.data, source.chemicals, sink.chemicals))
     self.data += applyTransform(transformParam, self.fireTransform)
     self.nextEvent.active = False
     self.schedule()
   
-  def evolve(self, time):
-    transformParam = concatenate(self.data, self.source.chemicals, self.sink.chemicals)
+  def evolve(self):
+    transformParam = concatenate((self.data, self.source.chemicals, self.sink.chemicals))
     self.data += applyTransform(transformParam, self.evolveTransform)
     self.schedule()
   
@@ -125,9 +125,9 @@ class Synapse(Cell):
       self.sink.inSynapses.remove(self)
       self.sink.outSynapses.add(self)
     self.fireTransform = \
-        rollTransform(self.data[fireTransform:fireTransformEnd], fireTransformWidth)
+        rollTransform(self.data[fireTransform:fireTransformEnd], fireTransformWidth, dataSize)
     self.evolveTransform = \
-        rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth)
+        rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth, dataSize)
     self.data = self.data[:dataSize]
     "We don't need this node anymore."
     if (self.node.tree == None):

@@ -22,9 +22,14 @@ class Brain(object):
     self.inputNeurons = inputNeurons
     self.outputNeurons = outputNeurons
     
-    self.seed = seed
+    self.seed = seed.copy()
     self.seed.brain = self
-    list(seed.outSynapses)[0].brain = self
+    for synapse in self.seed.inSynapses.union(self.seed.outSynapses):
+      synapse.brain = self
+    for neuron in self.inputNeurons:
+      neuron.brain = self
+    for neuron in self.outputNeurons:
+      neuron.brain = self
     self.currentTime = None
     self.neurons = set([self.seed.copy()])
     self.events = []
@@ -78,7 +83,7 @@ class Brain(object):
   
   def _startTime(self):
     self.currentTime = 0.0
-    for neuron in self.neurons:
+    for neuron in self.neurons.union(self.inputNeurons):
       neuron.schedule()
       for synapse in neuron.outSynapses:
         synapse.schedule()
@@ -110,8 +115,10 @@ class Brain(object):
     inputNeurons = [neuron.spawn(self.seed.node) for neuron in self.inputNeurons]
     outputNeurons = [neuron.copy() for neuron in self.outputNeurons]
     childSeed = self.seed.spawn()
-    return Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
+    child = Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
                  inputNeurons, outputNeurons)
+    child._startTime()
+    return child
   
   '''
   Returns the number of neurons in the brain.
