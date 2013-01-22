@@ -13,5 +13,6 @@ if __name__ == '__main__':
     ai = ArrayInterface([('hai', 10), ('bai', 5)])
     ai.hai = range(10)
     ai.bai = range(5) 
-    
+    ai.size = 0
     varg = ai.hai
+    print varg

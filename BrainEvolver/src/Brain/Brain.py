@@ -39,12 +39,12 @@ class Brain(object):
     openSynapses = set()
     closedSynapses = set()
     for neuron in self.neurons:
-      #place neurons in appropriate set
+      "place neurons in appropriate set"
       if (neuron.node.complete):
         closedNeurons.add(neuron)
       else:
         openNeurons.add(neuron)
-      #place synapses in appropriate set
+      "place synapses in appropriate set"
       for synapse in neuron.outSynapses:
         if (not synapse.node.complete):
           if (synapse.isReady()):
@@ -52,9 +52,9 @@ class Brain(object):
           else:
             closedSynapses.add(synapse)
     
-    #perform division algorithm
+    "perform division algorithm"
     while (openNeurons):
-      #divide relevant synapses
+      "divide relevant synapses"
       while (openSynapses):
         for curr in openSynapses.copy():
           openSynapses.remove(curr)
@@ -66,7 +66,7 @@ class Brain(object):
               else:
                 closedSynapses.add(child)
       
-      #divide all incomplete neurons
+      "divide all incomplete neurons"
       for curr in openNeurons.copy():
         openNeurons.remove(curr)
         children = curr.divide()

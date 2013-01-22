@@ -33,8 +33,9 @@ class ArrayInterface(object):
     self._writeDict = {'size' : deny}
     
     for name, size in nameSizePairs:
-      self._accessDict[name] = lambda : self.data[self.size + size]
-      self._writeDict[name] = self.writeVector(self.size, self.size + size)
+      start = self.size
+      self._accessDict[name] = lambda : self.data[start:start + size]
+      self._writeDict[name] = self.writeVector(start, start + size)
       self.size += size
     
     self.data = zeros(self.size)
