@@ -9,6 +9,14 @@ from numpy import *
 '''
 This object lets you access and edit arrays in it, and also access the field 'data',
 which contains all of the arrays concatenated together.
+
+Example code:
+
+interface = ArrayInterface([('vector1', 4), ('vector2', 1)])
+interface.vector1 = range(4)
+interface.vector2 = [4]
+print interface.vector #prints range(4)
+print interface.vector #prints range(5)
 '''
 class ArrayInterface(object):
   
