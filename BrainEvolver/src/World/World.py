@@ -22,7 +22,7 @@ class World(object):
         '''
         Constructor
         '''
-        self.display_size = (1024, 768)
+        self.display_size = (1024, 730)
         self.world_size = tuple(world_size)
         self.fpsClock = pygame.time.Clock()
         self.window = pygame.display.set_mode(self.display_size)

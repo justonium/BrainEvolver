@@ -9,4 +9,3 @@ from World.World import World
 if __name__ == '__main__':
     world = World((2000, 2000))
     world.simulate()
-    
