@@ -9,6 +9,7 @@ import math
 from pygame.sprite import Sprite
 from pygame import Surface
 from numpy.random import randn
+from random import randrange
 from math import sqrt
 from Brain.Brain import createEmpty
 
@@ -28,7 +29,7 @@ class Creature(Sprite):
         self.theta = theta
         self.v = 1
         self.energy = 5000 + abs(50 * randn())
-        self.brain = createEmpty(xrange(10), xrange(10))
+        self.brain = createEmpty(range(10), range(10))
         self.width = CREATURE_WIDTH
         self.height = CREATURE_HEIGHT
 
@@ -40,6 +41,7 @@ class Creature(Sprite):
         self.image = pygame.transform.rotate(self.base_image, theta)
         
     def tick(self):
+        self.brain.elapseTime(10, [(randrange(1, 1000) * 1.0)/ 1000 for i in xrange(10)])
         self.y -= math.sin(deg2rad(self.theta)) * self.v
         self.x += math.cos(deg2rad(self.theta)) * self.v 
         self.theta += (random.randrange(60)) - 30
