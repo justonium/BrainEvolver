@@ -109,7 +109,8 @@ class Neuron(Cell):
   def flush(self):
     self.input += self.sensitivity * (self.inBuffer + self.bias)
     self.inBuffer = 0.0
-    self.nextEvent.active = False
+    if (self.nextEvent != None):
+      self.nextEvent.active = False
     self.schedule()
   
   def fire(self):

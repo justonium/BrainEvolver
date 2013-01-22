@@ -11,6 +11,10 @@ def createIdentityTransform(dataSize):
   #return hstack(zeros(dataSize, 1), identity(dataSize))
 
 def applyTransform(data, transform):
+  if (data == None):
+    pass
+  if (transform == None):
+    pass
   return dot(transform, append(array(1), data))
 
 def createIdentityMap(dataSize):
