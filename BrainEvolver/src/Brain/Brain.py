@@ -6,11 +6,11 @@ Created on Dec 26, 2012
 
 from numpy import *
 from heapq import *
+from DivisionTree import *
 import Synapses
 from Synapses import Synapse
 import Neurons
 from Neurons import Neuron, InputNeuron, OutputNeuron
-from DivisionTree import *
 
 class Brain(object):
   
@@ -22,9 +22,14 @@ class Brain(object):
     self.inputNeurons = inputNeurons
     self.outputNeurons = outputNeurons
     
-    self.seed = seed
+    self.seed = seed.copy()
     self.seed.brain = self
-    list(seed.outSynapses)[0].brain = self
+    for synapse in self.seed.inSynapses.union(self.seed.outSynapses):
+      synapse.brain = self
+    for neuron in self.inputNeurons:
+      neuron.brain = self
+    for neuron in self.outputNeurons:
+      neuron.brain = self
     self.currentTime = None
     self.neurons = set([self.seed.copy()])
     self.events = []
@@ -42,7 +47,7 @@ class Brain(object):
       #place synapses in appropriate set
       for synapse in neuron.outSynapses:
         if (not synapse.node.complete):
-          if (synapse.node.isReady()):
+          if (synapse.isReady()):
             openSynapses.add(synapse)
           else:
             closedSynapses.add(synapse)
@@ -56,7 +61,7 @@ class Brain(object):
           children = curr.divide()
           for child in children:
             if (not child.node.complete):
-              if (child.node.isReady()):
+              if (child.isReady()):
                 openSynapses.add(child)
               else:
                 closedSynapses.add(child)
@@ -64,17 +69,12 @@ class Brain(object):
       #divide all incomplete neurons
       for curr in openNeurons.copy():
         openNeurons.remove(curr)
-        children, synapse = neuron.divide()
+        children = curr.divide()
         for child in children:
           if (child.node.complete):
             closedNeurons.add(child)
           else:
             openNeurons.add(child)
-        if (synapse != None and not synapse.node.complete):
-          if (synapse.node.isReady()):
-            openSynapses.add(synapse)
-          else:
-            closedSynapses.add(synapse)
     
     self.neurons = closedNeurons
     
@@ -83,7 +83,7 @@ class Brain(object):
   
   def _startTime(self):
     self.currentTime = 0.0
-    for neuron in self.neurons:
+    for neuron in self.neurons.union(self.inputNeurons):
       neuron.schedule()
       for synapse in neuron.outSynapses:
         synapse.schedule()
@@ -115,9 +115,31 @@ class Brain(object):
     inputNeurons = [neuron.spawn(self.seed.node) for neuron in self.inputNeurons]
     outputNeurons = [neuron.copy() for neuron in self.outputNeurons]
     childSeed = self.seed.spawn()
-    return Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
+    child = Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
                  inputNeurons, outputNeurons)
-
+    child._startTime()
+    return child
+  
+  '''
+  Returns the number of neurons in the brain.
+  This doesn't include input neurons or output neurons, whose numbers
+  are equal to the sizes of the corresponding input and output arrays.
+  '''
+  def numNeurons(self):
+    return self.seed.node.treeSize()
+  
+  '''
+  This includes, but is not limited to, the input and output synapses.
+  '''
+  def numSynapses(self):
+    return sum(map(lambda synapse : synapse.node.treeSize(), \
+                  list(self.seed.inSynapses.union(self.seed.outSynapses))))
+  
+  def numInputSynapses(self):
+    return sum(map(lambda neuron : list(neuron.outSynapses)[0].node.treeSize(), self.inputNeurons))
+  
+  def numOutputSynapses(self):
+    return sum(map(lambda neuron : list(neuron.inSynapses)[0].node.treeSize(), self.outputNeurons))
 
 
 "takes two brains and returns a child brain"
@@ -130,13 +152,17 @@ inputs and outputs must be lists of some sort (they could be numpy arrays).
 '''
 def createEmpty(inputs, outputs):
   "Create isolated seed."
-  synapse = Synapse(rootSynapseNode(), None, None, zeros(Synapses.divisionDataSize))
-  neuron = Neuron(rootNeuronNode(), [synapse], [synapse], zeros(Neurons.divisionDataSize))
+  synapse = Synapses.createRootSynapse()
+  
+  inputSynapses = [Synapses.createRootSynapse() for i in range(len(inputs))]
+  outputSynapses = [Synapses.createRootSynapse() for i in range(len(outputs))]
+  
+  neuron = Neurons.createRootNeuron(inputSynapses + [synapse], outputSynapses + [synapse])
   
   "Connect seed to inputs and outputs."
-  inputNeurons = [InputNeuron(None, None, None, zeros(Neurons.divisionDataSize)) \
+  inputNeurons = [InputNeuron(None, [], inputSynapses, zeros(Neurons.divisionDataSize)) \
                   for i in range(len(inputs))]
-  outputNeurons = [OutputNeuron(None, None, None, zeros(Neurons.divisionDataSize)) \
+  outputNeurons = [OutputNeuron(None, outputSynapses, [], zeros(Neurons.divisionDataSize)) \
                    for i in range(len(outputs))]
   
   "Make and start brain."

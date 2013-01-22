@@ -9,8 +9,8 @@ from heapq import *
 class Cell(object):
   
   def __init__(self):
-    self.accessDict = None
-    self.writeDict = None
+    self._accessDict = None
+    self._writeDict = None
     self.nextEvent = None
   
   def divide(self):
@@ -38,13 +38,13 @@ class Cell(object):
     return _writeVector
   
   def __setattr__(self, fieldname, value):
-    if (not self.__dict__.has_key(fieldname) or fieldname in self.__dict__):
+    if (fieldname in self.__dict__ or not '_writeDict' in self.__dict__):
       object.__setattr__(self, fieldname, value)
     else:
-      self.writeDict[fieldname](value)
+      self._writeDict[fieldname](self, value)
   
   def __getattr__(self, fieldname):
-    return self.accessDict[fieldname]()
+    return self._accessDict[fieldname]()
 
 
 

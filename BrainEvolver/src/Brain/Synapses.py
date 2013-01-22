@@ -6,9 +6,9 @@ Created on Dec 30, 2012
 
 from numpy import *
 from heapq import *
-from copy import deepcopy
 from Cell import Cell
 import Neurons
+import DivisionTree
 from Tools import *
 
 "main attributes"
@@ -18,7 +18,7 @@ evolveRateScale = 2
 
 "paramSize < dataSize < divisionDataSize"
 numAttributes = 3
-numChemicals = 5
+numChemicals = 3
 params = 0
 paramSize = numAttributes + numChemicals
 chemicals = numAttributes
@@ -32,8 +32,8 @@ evolveRateEnd = evolveRate + evolveRateSize
 dataSize = paramSize + evolveRateSize
 fireTransformWidth = dataSize + 2*Neurons.numChemicals
 evolveTransformWidth = dataSize + 2*Neurons.numChemicals
-fireTransformSize = transformSize(fireTransformWidth)
-evolveTransformSize = transformSize(fireTransformWidth)
+fireTransformSize = transformSize(fireTransformWidth, dataSize)
+evolveTransformSize = transformSize(fireTransformWidth, dataSize)
 "used to access data only in finalize"
 fireTransform = dataSize
 evolveTransform = dataSize + fireTransformSize
@@ -47,11 +47,11 @@ divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
 class Synapse(Cell):
   
   def copy(self):
-    return Synapse(self.node, self.source, self.sink, self.data.copy())
+    return Synapse(self.node, self.source, self.sink, self.data.copy(), self.brain)
   
-  def __init__(self, node, source, sink, data):
+  def __init__(self, node, source, sink, data, brain=None):
     "structure"
-    self.brain = None
+    self.brain = brain
     self.source = source
     self.sink = sink
     
@@ -67,7 +67,7 @@ class Synapse(Cell):
     
     "utilities"
     self.nextEvent = None
-    self.accessDict = { \
+    self._accessDict = { \
         'activation' : lambda : self.data[activation], \
         'weight' : lambda : self.data[weight], \
         'evolveRateScale' : lambda : self.data[evolveRateScale], \
@@ -75,7 +75,7 @@ class Synapse(Cell):
         'params' : lambda : self.data[params:paramSize], \
         'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
         }
-    self.writeDict = { \
+    self._writeDict = { \
         'activation' : super(Synapse, self).writeValue(activation), \
         'weight' : self.writeValue(weight), \
         'evolveRateScale' : self.writeValue(evolveRateScale), \
@@ -87,13 +87,13 @@ class Synapse(Cell):
   def fire(self, source):
     sink = self.sink if source == self.source else self.source
     sink.inBuffer += self.weight * self.activation
-    transformParam = concatenate(self.data, source.chemicals, sink.chemicals)
+    transformParam = concatenate((self.data, source.chemicals, sink.chemicals))
     self.data += applyTransform(transformParam, self.fireTransform)
     self.nextEvent.active = False
     self.schedule()
   
-  def evolve(self, time):
-    transformParam = concatenate(self.data, self.source.chemicals, self.sink.chemicals)
+  def evolve(self):
+    transformParam = concatenate((self.data, self.source.chemicals, self.sink.chemicals))
     self.data += applyTransform(transformParam, self.evolveTransform)
     self.schedule()
   
@@ -109,27 +109,35 @@ class Synapse(Cell):
     self.evolveRate = self.evolveRateScale * \
         sigmoid(applyTransform(self.params, self.evolveRateFun))
   
-  def divide(self, chemicals):
-    left = deepcopy(self)
-    right = deepcopy(self)
+  def divide(self):
+    left = self.copy()
+    right = self.copy()
     left.node = self.node.left
     right.node = self.node.right
     "apply left and right transforms to the data of left and right"
-    left.data = self.data + applyTransform(self.data, self.node.leftTransform)
-    right.data = self.data + applyTransform(self.data, self.node.rightTransform)
+    left.data = self.data + applyMap(self.data, self.node.leftTransform)
+    right.data = self.data + applyMap(self.data, self.node.rightTransform)
+    
+    return (left, right)
   
   def finalize(self):
     if (self.node.symmetric):
       self.sink.inSynapses.remove(self)
       self.sink.outSynapses.add(self)
     self.fireTransform = \
-        rollTransform(self.data[fireTransform:fireTransformEnd], fireTransformWidth)
+        rollTransform(self.data[fireTransform:fireTransformEnd], fireTransformWidth, dataSize)
     self.evolveTransform = \
-        rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth)
+        rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth, dataSize)
     self.data = self.data[:dataSize]
     "We don't need this node anymore."
     if (self.node.tree == None):
       self.node = None
+  
+  def isReady(self):
+    sourceComplete = self.source.node.complete if type(self.source) == 'Neuron' else False
+    sinkComplete = self.sink.node.complete if type(self.sink) == 'Neuron' else False
+    return not (self.node.sourceCarries and not sourceComplete \
+      or self.node.sinkCarries and not sinkComplete)
   
   "Should only be called on a root."
   def spawn(self):
@@ -138,7 +146,11 @@ class Synapse(Cell):
 
 
 
+def defaultSynapseTransform():
+  return zeros((2, divisionDataSize))
 
+def createRootSynapse():
+  return Synapse(DivisionTree.rootSynapseNode(), None, None, zeros(divisionDataSize))
 
 
 

@@ -7,8 +7,8 @@ from numpy import *
 from heapq import *
 from Cell import Cell
 import Synapses
+import DivisionTree
 from Tools import *
-from copy import deepcopy
 
 '''main attributes'''
 sensitivity = 0
@@ -19,7 +19,7 @@ evolveRateScale = 4
 
 "paramSize < dataSize < divisionDataSize"
 numAttributes = 5
-numChemicals = 5
+numChemicals = 3
 params = 0
 paramSize = numAttributes + numChemicals
 chemicals = numAttributes
@@ -57,11 +57,11 @@ class Neuron(Cell):
         inSynapses.add(child)
       if (synapse in self.outSynapses):
         outSynapses.add(child)
-    return Neuron(self.node, inSynapses, outSynapses, self.data.copy())
+    return Neuron(self.node, inSynapses, outSynapses, self.data.copy(), self.brain)
   
-  def __init__(self, node, inSynapses, outSynapses, data):
+  def __init__(self, node, inSynapses, outSynapses, data, brain=None):
     "structure"
-    self.brain = None
+    self.brain = brain
     self.inSynapses = set(inSynapses)
     self.outSynapses = set(outSynapses)
     for synapse in inSynapses:
@@ -83,7 +83,7 @@ class Neuron(Cell):
     "utilities"
     self.inBuffer = 0
     self.nextEvent = None
-    self.accessDict = { \
+    self._accessDict = { \
         'sensitivity' : lambda : self.data[sensitivity], \
         'bias' : lambda : self.data[bias], \
         'input' : lambda : self.data[input], \
@@ -94,7 +94,7 @@ class Neuron(Cell):
         'fireRateFun' : lambda : self.data[fireRate:fireRateEnd], \
         'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
         }
-    self.writeDict = { \
+    self._writeDict = { \
         'sensitivity' : self.writeValue(sensitivity), \
         'bias' : self.writeValue(bias), \
         'input' : self.writeValue(input), \
@@ -156,18 +156,14 @@ class Neuron(Cell):
     left.node = self.node.left
     right.node = self.node.right
     
-    "create new synapse"
-    synapse = self.node.synapse
-    left.outSynapses.add(synapse)
-    right.inSynapses.add(synapse)
-    synapse.source = left
-    synapse.sink = right
-    
     "carry synapses to children"
     for synapse in self.inSynapses:
-      synapse.node = deepcopy(synapse.node)
-      branch = synapse.node.sinkCarries[-1]
-      synapse.node.sinkCarries.remove(-1)
+      synapse.node = synapse.node.copy()
+      if (synapse.node.sinkCarries):
+        branch = synapse.node.sinkCarries[-1]
+        del synapse.node.sinkCarries[-1]
+      else:
+        branch = random.random_integers(0, 1)
       if (branch == 0):
         left.inSynapses.add(synapse)
         synapse.source = left
@@ -175,9 +171,12 @@ class Neuron(Cell):
         right.inSynapses.add(synapse)
         synapse.source = right
     for synapse in self.outSynapses:
-      synapse.node = deepcopy(synapse.node)
-      branch = synapse.node.sourceCarries[-1]
-      synapse.node.sinkCarries.remove(-1)
+      synapse.node = synapse.node.copy()
+      if (synapse.node.sourceCarries):
+        branch = synapse.node.sourceCarries[-1]
+        del synapse.node.sourceCarries[-1]
+      else:
+        branch = random.random_integers(0, 1)
       if (branch == 0):
         left.outSynapses.add(synapse)
         synapse.sink = left
@@ -188,6 +187,8 @@ class Neuron(Cell):
     "apply left and right transforms to the data of left and right"
     left.data = self.data + applyMap(self.data, self.node.leftTransform)
     right.data = self.data + applyMap(self.data, self.node.rightTransform)
+    
+    return (left, right)
     
     return ((left, right), synapse)
   
@@ -220,6 +221,9 @@ class Neuron(Cell):
 
 class InputNeuron(Neuron):
   
+  def __init__(self, node, inSynapses, outSynapses, data):
+    super(InputNeuron, self).__init__(node, inSynapses, outSynapses, data)
+  
   def updateRates(self):
     fireRate = self.fireRate
     super(InputNeuron, self).updateRates()
@@ -229,7 +233,7 @@ class InputNeuron(Neuron):
     inSynapses = set()
     outSynapses = self.outSynapses
     data = node.tree.mutateData(self.data)
-    child = Neuron(None, inSynapses, outSynapses, data)
+    child = InputNeuron(None, inSynapses, outSynapses, data)
     return child
 
 class OutputNeuron(Neuron):
@@ -241,6 +245,12 @@ class OutputNeuron(Neuron):
     pass
 
 
+
+def defaultNeuronTransform():
+  return zeros((2, divisionDataSize))
+
+def createRootNeuron(inSynapses, outSynapses):
+  return Neuron(DivisionTree.rootNeuronNode(), inSynapses, outSynapses, zeros(divisionDataSize))
 
 
 
