@@ -48,6 +48,6 @@ class ArrayInterface(object):
   
   def __getattr__(self, fieldname):
     return self._accessDict[fieldname]()
-  
+ 
 def deny(arg1, arg2):
   raise Exception('You can''t do that.')
