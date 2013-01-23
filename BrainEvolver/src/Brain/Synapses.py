@@ -47,13 +47,13 @@ divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
 class Synapse(Cell):
   
   def copy(self):
-    return Synapse(self.node, self.source, self.sink, self.data.copy(), self.brain)
+    return Synapse(self.node, self.data.copy(), self.brain)
   
-  def __init__(self, node, source, sink, data, brain=None):
+  def __init__(self, node, data, brain=None):
     "structure"
     self.brain = brain
-    self.source = source
-    self.sink = sink
+    self.source = None
+    self.sink = None
     
     "division data"
     self.node = node
@@ -85,13 +85,17 @@ class Synapse(Cell):
         }
   
   def fire(self, source):
-    sink = self.sink if source == self.source else self.source
+    sink = self.getSink(source)
     sink.inBuffer += self.weight * self.activation
     transformParam = concatenate((self.data, source.chemicals, sink.chemicals))
     self.data += applyTransform(transformParam, self.fireTransform)
     if (self.nextEvent != None):
       self.nextEvent.active = False
     self.schedule()
+    return sink
+  
+  def getSink(self, source):
+    return self.sink if source == self.source else self.source
   
   def evolve(self):
     transformParam = concatenate((self.data, self.source.chemicals, self.sink.chemicals))
@@ -143,7 +147,7 @@ class Synapse(Cell):
   "Should only be called on a root."
   def spawn(self):
     data = self.node.tree.mutateData(self.data)
-    return Synapse(self.node.spawn(), self.source, self.sink, data)
+    return Synapse(self.node.spawn(), data)
 
 
 
@@ -151,7 +155,7 @@ def defaultSynapseTransform():
   return zeros((2, divisionDataSize))
 
 def createRootSynapse():
-  return Synapse(DivisionTree.rootSynapseNode(), None, None, zeros(divisionDataSize))
+  return Synapse(DivisionTree.rootSynapseNode(), zeros(divisionDataSize))
 
 
 

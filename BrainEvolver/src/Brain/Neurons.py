@@ -51,6 +51,8 @@ class Neuron(Cell):
   def copy(self):
     inSynapses = set()
     outSynapses = set()
+    '''There will only be 1 synapse, but the circumstances are different for different types
+    of neurons, and this loop handles every case.'''
     for synapse in self.inSynapses.union(self.outSynapses):
       child = synapse.copy()
       if (synapse in self.inSynapses):
@@ -114,10 +116,12 @@ class Neuron(Cell):
     self.schedule()
   
   def fire(self):
+    nextNeurons = set()
     for synapse in self.outSynapses:
-      synapse.fire(self)
-    for synapse in self.outSynapses:
-      synapse.sink.flush()
+      sink = synapse.fire(self)
+      nextNeurons.add(sink)
+    for neuron in nextNeurons:
+      neuron.flush()
     self.data += applyTransform(self.data, self.fireTransform)
     self.schedule()
   
@@ -202,8 +206,8 @@ class Neuron(Cell):
     for synapse in self.outSynapses:
       synapse.finalize()
     "We don't need this node anymore."
-    if (self.node.tree == None):
-      self.node = None
+    #if (self.node.tree == None):
+      #self.node = None
   
   "should only be called on a seed neuron"
   def spawn(self):
@@ -222,18 +226,15 @@ class Neuron(Cell):
 
 class InputNeuron(Neuron):
   
-  def __init__(self, node, inSynapses, outSynapses, data):
-    super(InputNeuron, self).__init__(node, inSynapses, outSynapses, data)
-  
   def updateRates(self):
     fireRate = self.fireRate
     super(InputNeuron, self).updateRates()
     self.fireRate = fireRate
   
-  def spawn(self, node):
+  def spawn(self, tree):
     inSynapses = set()
     outSynapses = self.outSynapses
-    data = node.tree.mutateData(self.data)
+    data = tree.mutateData(self.data)
     child = InputNeuron(None, inSynapses, outSynapses, data)
     return child
 

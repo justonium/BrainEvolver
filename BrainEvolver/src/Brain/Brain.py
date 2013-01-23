@@ -19,20 +19,38 @@ class Brain(object):
     self.inputs = inputs
     self.outputs = outputs
     
-    self.inputNeurons = inputNeurons
-    self.outputNeurons = outputNeurons
+    "It is unnecessary to keep outputNeuronArchive so long as outputNeuron is hollow."
+    self.inputNeuronArchive = inputNeurons
+    self.outputNeuronArchive = outputNeurons
+    self.inputNeurons = [neuron.copy() for neuron in inputNeurons]
+    self.outputNeurons = [neuron.copy() for neuron in outputNeurons]
     
-    self.seed = seed.copy()
+    self.seed = seed
     self.seed.brain = self
-    for synapse in self.seed.inSynapses.union(self.seed.outSynapses):
+    "This is ok since there is only 1 synapse on the seed."
+    for synapse in self.seed.outSynapses:
       synapse.brain = self
     for neuron in self.inputNeurons:
       neuron.brain = self
+      neuron.finalize()
     for neuron in self.outputNeurons:
       neuron.brain = self
+      neuron.finalize()
+    
     self.currentTime = None
-    self.neurons = set([self.seed.copy()])
     self.events = []
+    divideNeuron = self.seed.copy()
+    self.neurons = set([divideNeuron])
+    
+    "Connect inputs and outputs to the single neuron before it divides."
+    for neuron in self.inputNeurons:
+      synapse = list(neuron.outSynapses)[0]
+      synapse.sink = divideNeuron
+      divideNeuron.inSynapses.add(synapse)
+    for neuron in self.outputNeurons:
+      synapse = list(neuron.inSynapses)[0]
+      synapse.source = divideNeuron
+      divideNeuron.outSynapses.add(synapse)
     
     openNeurons = set()
     closedNeurons = set()
@@ -112,9 +130,10 @@ class Brain(object):
   
   "Returns an asexually produced child."
   def spawn(self):
-    inputNeurons = [neuron.spawn(self.seed.node) for neuron in self.inputNeurons]
-    outputNeurons = [neuron.copy() for neuron in self.outputNeurons]
     childSeed = self.seed.spawn()
+    
+    inputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.inputNeuronArchive]
+    outputNeurons = [neuron.copy() for neuron in self.outputNeuronArchive]
     child = Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
                  inputNeurons, outputNeurons)
     child._startTime()
@@ -153,20 +172,19 @@ inputs and outputs must be lists of some sort (they could be numpy arrays).
 def createEmpty(inputs, outputs):
   "Create isolated seed."
   synapse = Synapses.createRootSynapse()
+  seed = Neurons.createRootNeuron([synapse], [synapse])
   
   inputSynapses = [Synapses.createRootSynapse() for i in range(len(inputs))]
   outputSynapses = [Synapses.createRootSynapse() for i in range(len(outputs))]
   
-  neuron = Neurons.createRootNeuron(inputSynapses + [synapse], outputSynapses + [synapse])
-  
   "Connect seed to inputs and outputs."
-  inputNeurons = [InputNeuron(None, [], inputSynapses, zeros(Neurons.divisionDataSize)) \
+  inputNeurons = [InputNeuron(None, [], [inputSynapses[i]], zeros(Neurons.divisionDataSize)) \
                   for i in range(len(inputs))]
-  outputNeurons = [OutputNeuron(None, outputSynapses, [], zeros(Neurons.divisionDataSize)) \
+  outputNeurons = [OutputNeuron(None, [outputSynapses[i]], [], zeros(Neurons.divisionDataSize)) \
                    for i in range(len(outputs))]
   
   "Make and start brain."
-  brain = Brain(neuron, inputs, outputs, inputNeurons, outputNeurons)
+  brain = Brain(seed, inputs, outputs, inputNeurons, outputNeurons)
   brain._startTime()
   return brain
 
