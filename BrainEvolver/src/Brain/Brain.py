@@ -16,39 +16,42 @@ class Brain(object):
   
   def __init__(self, seed, inputs, outputs, inputNeurons, outputNeurons):
     "These parameters are for outside use."
-    self.inputs = inputs
-    self.outputs = outputs
+    self.inputs = zeros(len(inputs))
+    self.outputs = zeros(len(outputs))
     
+    "keep the provided seed and input and output neurons unaltered"
     "It is unnecessary to keep outputNeuronArchive so long as outputNeuron is hollow."
+    self.seed = seed
     self.inputNeuronArchive = inputNeurons
     self.outputNeuronArchive = outputNeurons
+    
+    "make new copies of the provided seed and input and output neurons for use."
+    divideNeuron = self.seed.copy()
     self.inputNeurons = [neuron.copy() for neuron in inputNeurons]
     self.outputNeurons = [neuron.copy() for neuron in outputNeurons]
     
-    self.seed = seed
-    self.seed.brain = self
+    "Give reference to this brain to all of its components before they divide."
+    divideNeuron.brain = self
     "This is ok since there is only 1 synapse on the seed."
-    for synapse in self.seed.outSynapses:
+    for synapse in divideNeuron.outSynapses:
       synapse.brain = self
     for neuron in self.inputNeurons:
       neuron.brain = self
-      neuron.finalize()
+      neuron.getSynapse().brain = self
     for neuron in self.outputNeurons:
       neuron.brain = self
-      neuron.finalize()
+      neuron.getSynapse().brain = self
     
     self.currentTime = None
     self.events = []
-    divideNeuron = self.seed.copy()
-    self.neurons = set([divideNeuron])
     
     "Connect inputs and outputs to the single neuron before it divides."
     for neuron in self.inputNeurons:
-      synapse = list(neuron.outSynapses)[0]
+      synapse = neuron.getSynapse()
       synapse.sink = divideNeuron
       divideNeuron.inSynapses.add(synapse)
     for neuron in self.outputNeurons:
-      synapse = list(neuron.inSynapses)[0]
+      synapse = neuron.getSynapse()
       synapse.source = divideNeuron
       divideNeuron.outSynapses.add(synapse)
     
@@ -56,19 +59,19 @@ class Brain(object):
     closedNeurons = set()
     openSynapses = set()
     closedSynapses = set()
-    for neuron in self.neurons:
-      "place neurons in appropriate set"
-      if (neuron.node.complete):
-        closedNeurons.add(neuron)
-      else:
-        openNeurons.add(neuron)
-      "place synapses in appropriate set"
-      for synapse in neuron.outSynapses:
-        if (not synapse.node.complete):
-          if (synapse.isReady()):
-            openSynapses.add(synapse)
-          else:
-            closedSynapses.add(synapse)
+    "place neuron in appropriate set"
+    if (divideNeuron.node.complete):
+      closedNeurons.add(divideNeuron)
+    else:
+      openNeurons.add(divideNeuron)
+    "place synapses in appropriate set"
+    "This operation is overkill since there is only one synapse."
+    for synapse in divideNeuron.outSynapses.union(divideNeuron.inSynapses):
+      if (not synapse.node.complete):
+        if (synapse.isReady()):
+          openSynapses.add(synapse)
+        else:
+          closedSynapses.add(synapse)
     
     "perform division algorithm"
     while (openNeurons):
@@ -98,6 +101,10 @@ class Brain(object):
     
     for neuron in self.neurons:
       neuron.finalize()
+    for neuron in self.inputNeurons:
+      neuron.finalize()
+    for neuron in self.outputNeurons:
+      neuron.finalize()
   
   def _startTime(self):
     self.currentTime = 0.0
@@ -106,7 +113,8 @@ class Brain(object):
       for synapse in neuron.outSynapses:
         synapse.schedule()
   
-  "Runs until it is in sync with currentTime."
+  '''Runs until it is in sync with currentTime. If no inputs are provided,
+  inputs will retain last assigned value.'''
   def elapseTime(self, timeElapsed, inputs=None):
     "Update input neurons."
     if (inputs == None):
@@ -133,7 +141,7 @@ class Brain(object):
     childSeed = self.seed.spawn()
     
     inputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.inputNeuronArchive]
-    outputNeurons = [neuron.copy() for neuron in self.outputNeuronArchive]
+    outputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.outputNeuronArchive]
     child = Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
                  inputNeurons, outputNeurons)
     child._startTime()
@@ -155,10 +163,10 @@ class Brain(object):
                   list(self.seed.inSynapses.union(self.seed.outSynapses))))
   
   def numInputSynapses(self):
-    return sum(map(lambda neuron : list(neuron.outSynapses)[0].node.treeSize(), self.inputNeurons))
+    return sum(map(lambda neuron : neuron.getSynapse().node.treeSize(), self.inputNeurons))
   
   def numOutputSynapses(self):
-    return sum(map(lambda neuron : list(neuron.inSynapses)[0].node.treeSize(), self.outputNeurons))
+    return sum(map(lambda neuron : neuron.getSynapse().node.treeSize(), self.outputNeurons))
 
 
 "takes two brains and returns a child brain"

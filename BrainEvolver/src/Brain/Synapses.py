@@ -8,6 +8,7 @@ from numpy import *
 from heapq import *
 from Cell import Cell
 import Neurons
+from Neurons import Neuron
 import DivisionTree
 from Tools import *
 
@@ -139,8 +140,8 @@ class Synapse(Cell):
       self.node = None
   
   def isReady(self):
-    sourceComplete = self.source.node.complete if type(self.source) == 'Neuron' else False
-    sinkComplete = self.sink.node.complete if type(self.sink) == 'Neuron' else False
+    sourceComplete = self.source.node.complete if type(self.source) == Neuron else False
+    sinkComplete = self.sink.node.complete if type(self.sink) == Neuron else False
     return not (self.node.sourceCarries and not sourceComplete \
       or self.node.sinkCarries and not sinkComplete)
   

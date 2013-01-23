@@ -59,7 +59,7 @@ class Neuron(Cell):
         inSynapses.add(child)
       if (synapse in self.outSynapses):
         outSynapses.add(child)
-    return Neuron(self.node, inSynapses, outSynapses, self.data.copy(), self.brain)
+    return type(self)(self.node, inSynapses, outSynapses, self.data.copy(), self.brain)
   
   def __init__(self, node, inSynapses, outSynapses, data, brain=None):
     "structure"
@@ -107,6 +107,9 @@ class Neuron(Cell):
         'fireRateFun' : self.writeVector(fireRate, fireRateEnd), \
         'evolveRateFun' : self.writeVector(evolveRate, evolveRateEnd) \
     }
+  
+  def getSynapse(self):
+    raise NotImplementedError
   
   def flush(self):
     self.input += self.sensitivity * (self.inBuffer + self.bias)
@@ -226,25 +229,45 @@ class Neuron(Cell):
 
 class InputNeuron(Neuron):
   
+  def getSynapse(self):
+    return list(self.outSynapses)[0]
+  
   def updateRates(self):
     fireRate = self.fireRate
     super(InputNeuron, self).updateRates()
     self.fireRate = fireRate
   
   def spawn(self, tree):
-    inSynapses = set()
-    outSynapses = self.outSynapses
+    synapse = self.getSynapse().spawn()
     data = tree.mutateData(self.data)
-    child = InputNeuron(None, inSynapses, outSynapses, data)
+    child = InputNeuron(None, [], [synapse], data)
     return child
+  
+  "temporary"
+  def fire(self):
+    pass
+    super(OutputNeuron, self).fire()
 
 class OutputNeuron(Neuron):
+  
+  def getSynapse(self):
+    return list(self.inSynapses)[0]
+  
+  def spawn(self, tree):
+    synapse = self.getSynapse().spawn()
+    child = OutputNeuron(None, [synapse], [], self.data)
+    return child
   
   def fire(self):
     pass
   
   def evolve(self):
     pass
+  
+  "temporary"
+  def flush(self):
+    pass
+    super(OutputNeuron, self).flush()
 
 
 
