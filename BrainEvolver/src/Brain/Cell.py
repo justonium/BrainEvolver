@@ -23,9 +23,9 @@ class Cell(object):
     raise NotImplementedError
   
   def pushEvent(self, action, executionTime):
-    event = Event(self, action, executionTime)
+    event = Event(self, action)
     self.nextEvent = event
-    heappush(self.brain.events, event)
+    heappush(self.brain.events, (executionTime, event))
   
   def writeValue(self, location):
     def _writeValue(self, value):
@@ -50,10 +50,9 @@ class Cell(object):
 
 class Event(object):
   
-  def __init__(self, neuron, action, executionTime):
+  def __init__(self, neuron, action):
     self.neuron = neuron
     self.action = action
-    self.executionTime = executionTime
     self.active = True
   
   def execute(self):

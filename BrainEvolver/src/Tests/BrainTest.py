@@ -21,5 +21,5 @@ for i in range(100):
   print 'generation: ', i
   print 'number of neurons: ', brain.numNeurons()
   print 'number of synapses: ', brain.numSynapses()
-  brain.elapseTime(1.0, range(1))
+  brain.elapseTime(10.0, [10.])
   print 'outputs: ', brain.outputs

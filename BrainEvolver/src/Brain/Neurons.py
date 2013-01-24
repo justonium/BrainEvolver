@@ -19,7 +19,7 @@ evolveRateScale = 4
 
 "paramSize < dataSize < divisionDataSize"
 numAttributes = 5
-numChemicals = 3
+numChemicals = 1
 params = 0
 paramSize = numAttributes + numChemicals
 chemicals = numAttributes
@@ -114,8 +114,6 @@ class Neuron(Cell):
   def flush(self):
     self.input += self.sensitivity * (self.inBuffer + self.bias)
     self.inBuffer = 0.0
-    if (self.nextEvent != None):
-      self.nextEvent.active = False
     self.schedule()
   
   def fire(self):
@@ -134,6 +132,9 @@ class Neuron(Cell):
   
   "enqueues new events"
   def schedule(self):
+    "This remains true after self.nextEvent has executed."
+    if (self.nextEvent != None):
+      self.nextEvent.active = False
     self.updateRates()
     fireDelay = sampleDelay(self.fireRate)
     evolveDelay = sampleDelay(self.evolveRate)
@@ -242,11 +243,6 @@ class InputNeuron(Neuron):
     data = tree.mutateData(self.data)
     child = InputNeuron(None, [], [synapse], data)
     return child
-  
-  "temporary"
-  def fire(self):
-    pass
-    super(OutputNeuron, self).fire()
 
 class OutputNeuron(Neuron):
   
@@ -255,7 +251,8 @@ class OutputNeuron(Neuron):
   
   def spawn(self, tree):
     synapse = self.getSynapse().spawn()
-    child = OutputNeuron(None, [synapse], [], self.data)
+    data = tree.mutateData(self.data)
+    child = OutputNeuron(None, [synapse], [], data)
     return child
   
   def fire(self):
@@ -266,7 +263,6 @@ class OutputNeuron(Neuron):
   
   "temporary"
   def flush(self):
-    pass
     super(OutputNeuron, self).flush()
 
 

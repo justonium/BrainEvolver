@@ -19,7 +19,7 @@ evolveRateScale = 2
 
 "paramSize < dataSize < divisionDataSize"
 numAttributes = 3
-numChemicals = 3
+numChemicals = 1
 params = 0
 paramSize = numAttributes + numChemicals
 chemicals = numAttributes
@@ -90,8 +90,6 @@ class Synapse(Cell):
     sink.inBuffer += self.weight * self.activation
     transformParam = concatenate((self.data, source.chemicals, sink.chemicals))
     self.data += applyTransform(transformParam, self.fireTransform)
-    if (self.nextEvent != None):
-      self.nextEvent.active = False
     self.schedule()
     return sink
   
@@ -105,6 +103,8 @@ class Synapse(Cell):
   
   "enqueues new events"
   def schedule(self):
+    if (self.nextEvent != None):
+      self.nextEvent.active = False
     self.updateRates()
     delay = sampleDelay(self.evolveRate)
     action = self.evolve

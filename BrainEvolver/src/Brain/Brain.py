@@ -16,8 +16,10 @@ class Brain(object):
   
   def __init__(self, seed, inputs, outputs, inputNeurons, outputNeurons):
     "These parameters are for outside use."
-    self.inputs = zeros(len(inputs))
-    self.outputs = zeros(len(outputs))
+    self.numInputs = len(inputs)
+    self.numOutputs = len(outputs)
+    self.inputs = zeros(self.numInputs)
+    self.outputs = zeros(self.numOutputs)
     
     "keep the provided seed and input and output neurons unaltered"
     "It is unnecessary to keep outputNeuronArchive so long as outputNeuron is hollow."
@@ -108,10 +110,16 @@ class Brain(object):
   
   def _startTime(self):
     self.currentTime = 0.0
-    for neuron in self.neurons.union(self.inputNeurons):
+    for i in range(self.numInputs):
+      neuron = self.inputNeurons[i]
+      neuron.input = self.inputs[i]
+      neuron.schedule()
+    for neuron in self.neurons:
       neuron.schedule()
       for synapse in neuron.outSynapses:
-        synapse.schedule()
+        "In the case of bidirectional synapses, this check prevents double scheduling."
+        if (synapse.nextEvent == None):
+          synapse.schedule()
   
   '''Runs until it is in sync with currentTime. If no inputs are provided,
   inputs will retain last assigned value.'''
@@ -121,19 +129,25 @@ class Brain(object):
       inputs = self.inputs
     else:
       self.inputs = inputs
-      for i in range(len(inputs)):
-        self.inputNeurons[i].fireRate = inputs[i]
+      for i in range(self.numInputs):
+        neuron = self.inputNeurons[i]
+        neuron.input = inputs[i]
+        neuron.schedule()
+        
     self.outputs = 0*self.outputs
     
+    "Calculate the final time."
+    finalTime = self.currentTime + timeElapsed
     "Let the network compute."
-    self.currentTime += timeElapsed
-    while (self.events and self.events[0].executionTime < self.currentTime):
-      event = heappop(self.events)
+    while (self.events and self.events[0][0] < finalTime):
+      executionTime, event = heappop(self.events)
       if (event.active):
         event.execute()
+        self.currentTime = executionTime
+    self.currentTime = finalTime
     
     "Read output neurons."
-    for i in range(len(self.outputs)):
+    for i in range(self.numOutputs):
       self.outputs[i] = self.outputNeurons[i].input
   
   "Returns an asexually produced child."
