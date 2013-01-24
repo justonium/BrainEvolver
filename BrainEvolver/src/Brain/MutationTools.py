@@ -10,13 +10,13 @@ import DivisionTree
 def mutateValue(number, driftRate, zeroRate, nonzeroRate):
   if (number == 0):
     if (random.random() < nonzeroRate):
-      number = random.normal()
+      number = random.normal(scale=0.2)
   else:
     "This is non-symmetric, but probably negligible."
     if (random.random() < zeroRate):
       number = 0
     elif (random.random() < driftRate):
-      number *= random.lognormal()
+      number *= random.lognormal(sigma=0.5)
   return number
 
 _mutateArrayFun = vectorize(mutateValue)
