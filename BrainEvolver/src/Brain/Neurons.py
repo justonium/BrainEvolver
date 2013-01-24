@@ -175,10 +175,10 @@ class Neuron(Cell):
         branch = random.random_integers(0, 1)
       if (branch == 0):
         left.inSynapses.add(synapse)
-        synapse.source = left
+        synapse.sink = left
       else:
         right.inSynapses.add(synapse)
-        synapse.source = right
+        synapse.sink = right
     for synapse in self.outSynapses:
       synapse.node = synapse.node.copy()
       if (synapse.node.sourceCarries):
@@ -188,10 +188,10 @@ class Neuron(Cell):
         branch = random.random_integers(0, 1)
       if (branch == 0):
         left.outSynapses.add(synapse)
-        synapse.sink = left
+        synapse.source = left
       else:
         right.outSynapses.add(synapse)
-        synapse.sink = right
+        synapse.source = right
         
     "apply left and right transforms to the data of left and right"
     left.data = self.data + applyMap(self.data, self.node.leftTransform)
@@ -207,8 +207,6 @@ class Neuron(Cell):
     self.evolveTransform = \
         rollTransform(self.data[evolveTransform:evolveTransformEnd], dataSize)
     self.data = self.data[:dataSize]
-    for synapse in self.outSynapses:
-      synapse.finalize()
     "We don't need this node anymore."
     #if (self.node.tree == None):
       #self.node = None
@@ -217,7 +215,7 @@ class Neuron(Cell):
   def spawn(self):
     inSynapses = set()
     outSynapses = set()
-    for synapse in self.inSynapses.union(self.outSynapses):
+    for synapse in self.inSynapses.intersection(self.outSynapses):
       child = synapse.spawn()
       if (synapse in self.inSynapses):
         inSynapses.add(child)
@@ -234,9 +232,9 @@ class InputNeuron(Neuron):
     return list(self.outSynapses)[0]
   
   def updateRates(self):
-    fireRate = self.fireRate
+    input = self.input
     super(InputNeuron, self).updateRates()
-    self.fireRate = fireRate
+    self.input = input
   
   def spawn(self, tree):
     synapse = self.getSynapse().spawn()
@@ -255,15 +253,17 @@ class OutputNeuron(Neuron):
     child = OutputNeuron(None, [synapse], [], data)
     return child
   
+  def finalize(self):
+    self.data = self.data[:dataSize]
+  
   def fire(self):
     pass
   
   def evolve(self):
     pass
   
-  "temporary"
-  def flush(self):
-    super(OutputNeuron, self).flush()
+  def schedule(self):
+    pass
 
 
 

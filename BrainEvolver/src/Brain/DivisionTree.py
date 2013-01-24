@@ -73,7 +73,7 @@ class DivisionNode(object):
     child.leftTransform = mutateArray(child.leftTransform, *tree.transformMutationRates)
     child.rightTransform = mutateArray(child.rightTransform, *tree.transformMutationRates)
     
-    if (child.complete):
+    if (self.complete):
       if (random.random() < tree.sharedRates[0]):
         "Become a parent and have 2 leaf children."
         child.complete = False
@@ -111,7 +111,7 @@ class NeuronNode(DivisionNode):
   
   def _spawn(self, tree):
     child = super(NeuronNode, self)._spawn(tree)
-    
+    pass
     return child
   
   def copy(self):
@@ -142,25 +142,25 @@ class SynapseNode(DivisionNode):
     if (random.random() < tree.otherRates[3]):
       child.sinkCarries.append(1)
     
-    if (child.sourceCarries):
+    if (self.sourceCarries):
       
       if (random.random() < tree.otherRates[4]):
         del child.sourceCarries[0]
       
-      elif (random.random() < tree.otherRates[6]):
+      elif (random.random() < tree.otherRates[5]):
         index = random.random_integers(0, len(child.sourceCarries) - 1)
         del child.sourceCarries[index]
       
-      elif (random.random() < tree.otherRates[8]):
+      elif (random.random() < tree.otherRates[6]):
         index = random.random_integers(0, len(child.sourceCarries) - 1)
         child.sourceCarries = child.sourceCarries[-(index + 1):]
     
-    if (child.sinkCarries):
+    if (self.sinkCarries):
       
-      if (random.random() < tree.otherRates[5]):
+      if (random.random() < tree.otherRates[7]):
         del child.sinkCarries[0]
       
-      elif (random.random() < tree.otherRates[7]):
+      elif (random.random() < tree.otherRates[8]):
         index = random.random_integers(0, len(child.sinkCarries) - 1)
         del child.sinkCarries[index]
       
@@ -169,13 +169,20 @@ class SynapseNode(DivisionNode):
         child.sinkCarries = child.sinkCarries[-(index + 1):]
     
     "do stuff with symmetric"
-    if (random.random() < tree.otherRates[10]):
-      pass
-    
-    if (random.random() < tree.otherRates[11]):
-      pass
+    if (self.symmetric):
+      if (random.random() < tree.otherRates[10]):
+        child.setSymmetric(False)
+    else:
+      if (random.random() < tree.otherRates[11]):
+        child.setSymmetric(True)
     
     return child
+  
+  def setSymmetric(self, symmetric):
+    self.symmetric = symmetric
+    if (not self.complete):
+      self.left.setSymmetric(symmetric)
+      self.right.setSymmetric(symmetric)
   
   def copy(self):
     return SynapseNode(self.left, self.right, self.complete, self.leftTransform, self.rightTransform, \
@@ -191,8 +198,8 @@ def rootNeuronNode():
       emptyMutationRates((2, Neurons.divisionDataSize)))
   return node
 
-def rootSynapseNode():
-  node = SynapseNode(None, None, True, defaultSynapseTransform(), defaultSynapseTransform())
+def rootSynapseNode():###symmetric shouldn't be True
+  node = SynapseNode(None, None, True, defaultSynapseTransform(), defaultSynapseTransform(), symmetric=True)
   node.tree = SynapseTree(node, emptyMutationRates((Synapses.divisionDataSize)), \
       emptyMutationRates((2, Synapses.divisionDataSize)))
   return node

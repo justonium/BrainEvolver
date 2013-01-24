@@ -101,12 +101,32 @@ class Brain(object):
     
     self.neurons = closedNeurons
     
+    "Finalize all neurons."
     for neuron in self.neurons:
       neuron.finalize()
     for neuron in self.inputNeurons:
       neuron.finalize()
     for neuron in self.outputNeurons:
       neuron.finalize()
+    
+    "Finalize all synapses."
+    synapses = set()
+    for neuron in self.inputNeurons:
+      synapses.add(neuron.getSynapse())
+    for neuron in self.neurons:
+      synapses.update(neuron.inSynapses)
+      synapses.update(neuron.outSynapses)
+    '''
+    for synapse in synapses:
+      sink = synapse.sink
+      source = synapse.source
+      if (synapse not in sink.inSynapses):
+        print 'fail'
+      if (synapse not in source.outSynapses):
+        print 'fail'
+    '''
+    for synapse in synapses:
+      synapse.finalize()
   
   def _startTime(self):
     self.currentTime = 0.0
@@ -156,6 +176,7 @@ class Brain(object):
     
     inputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.inputNeuronArchive]
     outputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.outputNeuronArchive]
+    
     child = Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
                  inputNeurons, outputNeurons)
     child._startTime()
