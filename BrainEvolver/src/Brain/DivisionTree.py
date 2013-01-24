@@ -199,7 +199,7 @@ def rootNeuronNode():
   return node
 
 def rootSynapseNode():###symmetric shouldn't be True
-  node = SynapseNode(None, None, True, defaultSynapseTransform(), defaultSynapseTransform(), symmetric=True)
+  node = SynapseNode(None, None, True, defaultSynapseTransform(), defaultSynapseTransform())
   node.tree = SynapseTree(node, emptyMutationRates((Synapses.divisionDataSize)), \
       emptyMutationRates((2, Synapses.divisionDataSize)))
   return node
