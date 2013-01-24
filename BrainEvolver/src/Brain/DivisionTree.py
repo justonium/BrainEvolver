@@ -74,14 +74,14 @@ class DivisionNode(object):
     child.rightTransform = mutateArray(child.rightTransform, *tree.transformMutationRates)
     
     if (child.complete):
-      if (random.random() < tree.sharedRates[0] and False):
+      if (random.random() < tree.sharedRates[0]):
         "Become a parent and have 2 leaf children."
         child.complete = False
         child.left = self.getLeafNode()
         child.right = self.getLeafNode()
         
     else:
-      if (random.random() < tree.sharedRates[1] and False):
+      if (random.random() < tree.sharedRates[1]):
         "Delete children and become a leaf."
         child.left = None
         child.right = None
