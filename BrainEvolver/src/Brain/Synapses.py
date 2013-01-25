@@ -112,8 +112,11 @@ class Synapse(Cell):
       self.pushEvent(action, self.source.brain.currentTime + delay)
   
   def updateRates(self):
+    '''
     self.evolveRate = self.evolveRateScale * \
         sigmoid(applyTransform(self.params, self.evolveRateFun))
+    '''
+    pass
   
   def divide(self):
     left = self.copy()

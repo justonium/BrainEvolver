@@ -16,24 +16,18 @@ bias = 1
 input = 2
 fireRateScale = 3
 evolveRateScale = 4
+fireRate = 5
+evolveRate = 6
 
 "paramSize < dataSize < divisionDataSize"
-numAttributes = 5
+numAttributes = 7
 numChemicals = 1
 params = 0
 paramSize = numAttributes + numChemicals
 chemicals = numAttributes
 chemicalsEnd = paramSize
 
-fireRateSize = reduceSize(paramSize)
-evolveRateSize = reduceSize(paramSize)
-"also used to access data"
-fireRate = paramSize
-evolveRate = paramSize + fireRateSize
-fireRateEnd = fireRate + fireRateSize
-evolveRateEnd = evolveRate + evolveRateSize
-
-dataSize = paramSize + fireRateSize + evolveRateSize
+dataSize = paramSize
 fireTransformSize = transformSize(dataSize)
 evolveTransformSize = transformSize(dataSize)
 "used to access data only in finalize"
@@ -75,9 +69,6 @@ class Neuron(Cell):
     self.node = node
     self.data = data
     
-    self.fireRate = None
-    self.evolveRate = None
-    
     "static behavior of all other attributes"
     self.fireTransform = None
     self.evolveTransform = None
@@ -93,8 +84,8 @@ class Neuron(Cell):
         'evolveRateScale' : lambda : self.data[evolveRateScale], \
         'chemicals' : lambda : self.data[chemicals:chemicalsEnd], \
         'params' : lambda : self.data[params:paramSize], \
-        'fireRateFun' : lambda : self.data[fireRate:fireRateEnd], \
-        'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
+        'fireRate' : lambda : self.data[fireRate], \
+        'evolveRate' : lambda : self.data[evolveRate] \
         }
     self._writeDict = { \
         'sensitivity' : self.writeValue(sensitivity), \
@@ -104,8 +95,8 @@ class Neuron(Cell):
         'evolveRateScale' : self.writeValue(evolveRateScale), \
         'chemicals' : self.writeVector(chemicals, chemicalsEnd), \
         'params' : self.writeVector(params, paramSize), \
-        'fireRateFun' : self.writeVector(fireRate, fireRateEnd), \
-        'evolveRateFun' : self.writeVector(evolveRate, evolveRateEnd) \
+        'fireRate' : self.writeValue(fireRate), \
+        'evolveRate' : self.writeValue(evolveRate) \
     }
   
   def getSynapse(self):
@@ -148,10 +139,13 @@ class Neuron(Cell):
       self.pushEvent(action, self.brain.currentTime + delay)
   
   def updateRates(self):
+    '''
     self.fireRate = self.fireRateScale * \
         sigmoid(applyTransform(self.params, self.fireRateFun))
     self.evolveRate = self.evolveRateScale * \
         sigmoid(applyTransform(self.params, self.evolveRateFun))
+    '''
+    pass
   
   def divide(self):
     "initialize children"
