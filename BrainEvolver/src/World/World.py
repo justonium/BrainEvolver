@@ -3,11 +3,15 @@ Created on Jan 18, 2013
 
 @author: Nathan
 '''
-import pygame, sys
-from pygame.locals import *
+import pygame, sys, numpy
+from pygame import locals
+SCALE_FLAG = True
 from Floor import Floor
 from Body.Creature import Creature
 from random import randrange
+from copy import copy
+from ResourceManagers import FoodNurturer
+
 
 num_creatures = 3
 
@@ -33,7 +37,19 @@ class World(object):
         self.floor_pos = (0, 0)
         self.lastClick = (0, 0)
         
-        for no in xrange(num_creatures):
+        self.foodN = FoodNurturer(self)
+        self.grid = []
+        
+        'Create the empty grid'
+        for _ in xrange(self.display_size[0]):
+            self.grid.append([0xF0F0] * self.display_size[1])
+        
+        for y in range(self.display_size[1]):
+            for x in range(self.display_size[0]):
+                self.grid[x][y] = self.foodN.grid[abs(self.floor_pos[1]) + y][abs(self.floor_pos[0]) + x]
+        
+        self.grid = numpy.array(self.grid)
+        for _ in xrange(num_creatures):
             self.creatures.append(Creature(randrange(self.display_size[0]), randrange(self.display_size[1]), randrange(360)))
 
     def simulate(self):
@@ -50,7 +66,9 @@ class World(object):
     
     def __tick(self):
         pygame.draw.rect(self.window, pygame.Color(40, 40, 40), (0, 0, self.display_size[0], self.display_size[1]))
-        self.window.blit(self.floor.image, self.floor_pos)
+        self.window.blit(self.floor.image, (0, 0), (abs(self.floor_pos[0]), abs(self.floor_pos[1])) + self.display_size)
+        
+        pygame.surfarray.blit_array(self.window, self.grid)         
         
         for creat in self.creatures:
             self.window.blit(creat.image, self._t((creat.x, creat.y)))
@@ -63,17 +81,33 @@ class World(object):
                 
         self.__checkEvents()
         
+    def getFloorPixel(self, x, y):
+        pxArr = pygame.PixelArray(self.floor.image)
+        pgcol = copy(pxArr[x][y])
+        del pxArr
+        return pgcol
         
     def __checkEvents(self):
         for event in pygame.event.get():
-            if event.type == QUIT:
+            if event.type == locals.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == MOUSEBUTTONDOWN:
+            elif event.type == locals.MOUSEBUTTONDOWN:
                 if 1 == event.button:
                     self.lastClick = tuple(event.pos)
                     self.floor_poso = self.floor_pos
-            elif event.type == MOUSEMOTION:
+            elif event.type == locals.MOUSEBUTTONUP:
+                for y in range(self.display_size[1]):
+                    for x in range(self.display_size[0]):
+                        self.grid[x][y] = self.foodN.grid[abs(self.floor_pos[1]) + y][abs(self.floor_pos[0]) + x]
+                        
+        
+            elif event.type == locals.MOUSEMOTION:
                 if 1 in event.buttons:
-                    self.floor_pos = (self.floor_poso[0] + event.pos[0] - self.lastClick[0], self.floor_poso[1] + event.pos[1] - self.lastClick[1]) 
+                    self.floor_pos = (self.floor_pos[0] + event.pos[0] - self.lastClick[0], self.floor_poso[1] + event.pos[1] - self.lastClick[1])
+                    if self.floor_pos[0] > 0:
+                        self.floor_pos = (0, self.floor_pos[1])
+                         
+                    if self.floor_pos[1] > 0:
+                        self.floor_pos = (self.floor_pos[0], 0)
                 

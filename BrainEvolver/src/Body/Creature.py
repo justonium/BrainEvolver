@@ -32,22 +32,27 @@ class Creature(Sprite):
         self.brain = createEmpty(range(10), range(10))
         self.width = CREATURE_WIDTH
         self.height = CREATURE_HEIGHT
-
+        
+        self.senses = []
+        
         self.base_image = Surface((self.width, self.height), pygame.SRCALPHA, 32)
         self.base_image = self.base_image.convert_alpha()
+        
+        self.brain_data = None
         
         self.rect = (0, 0, self.width, self.height)
         self._render()
         self.image = pygame.transform.rotate(self.base_image, theta)
         
+    ''' updates the creature for the next round '''
     def tick(self):
-        self.brain.elapseTime(10, [(randrange(1, 1000) * 1.0)/ 1000 for i in xrange(10)])
+        self.brain.elapseTime(10, [(randrange(1, 1000) * 1.0)/ 1000 for _ in xrange(10)])
         self.y -= math.sin(deg2rad(self.theta)) * self.v
         self.x += math.cos(deg2rad(self.theta)) * self.v 
         self.theta += (random.randrange(60)) - 30
         self.image = pygame.transform.rotate(self.base_image, self.theta)
         
-    
+    ''' rendering for the basic, ugly creature '''
     def _render(self):
         pygame.draw.circle(self.base_image, pygame.Color(0, 128, 64), (self.width/2, self.height/2), self.width/2, self.width/2)
         s = sqrt(2) * 12

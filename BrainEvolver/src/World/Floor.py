@@ -7,8 +7,7 @@ import pygame
 from pygame.sprite import Sprite
 from pygame import Surface
 from random import randrange
-
-SCALE_FLAG = True
+from World import SCALE_FLAG
 class Floor(Sprite):
     '''
     classdocs
@@ -28,13 +27,15 @@ class Floor(Sprite):
         self.vertices = []
         self.peaks = 300
         
-        for i in xrange(self.peaks):
+        for _ in xrange(self.peaks):
             self.vertices.append((randrange(self.width), randrange(self.height)))
             
         if not self.image:
             self.image = Surface((self.width, self.height))
             self._render()
+        
         pygame.image.save(self.image, 'heightmap.png')
+        
         if SCALE_FLAG:
             tmpimg = pygame.transform.scale2x(self.image)
             del self.image
