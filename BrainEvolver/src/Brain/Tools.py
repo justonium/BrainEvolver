@@ -15,6 +15,7 @@ def applyTransform(data, transform):
     pass
   if (transform == None):
     pass
+  
   return dot(transform, append(array(1), data))
 
 def createIdentityMap(dataSize):
@@ -42,7 +43,13 @@ maxRate = 24. #the frame rate of most movies
 minDelay = 1/maxRate
 
 def sampleDelay(rate):
-  return minDelay + random.exponential(1/rate) if rate > 0 else inf
+  if (rate == inf):
+    delay = minDelay
+  elif (rate > 0):
+    delay = minDelay + random.exponential(1.0/rate)
+  else:
+    delay = inf
+  return delay
 
 
 
