@@ -10,7 +10,7 @@ from Brain import Synapse
 
 from Brain import *
 
-brain = createEmpty(range(1), range(1))
+brain = createEmpty(1, 1)
 #nnode = NeuronNode(leafNeuronNode, leafNeuronNode, False)
 #nnode.brain = brain
 #brain.seed.node = nnode

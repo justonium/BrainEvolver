@@ -14,10 +14,10 @@ from Neurons import Neuron, InputNeuron, OutputNeuron
 
 class Brain(object):
   
-  def __init__(self, seed, inputs, outputs, inputNeurons, outputNeurons):
+  def __init__(self, seed, numInputs, numOutputs, inputNeurons, outputNeurons):
     "These parameters are for outside use."
-    self.numInputs = len(inputs)
-    self.numOutputs = len(outputs)
+    self.numInputs = numInputs
+    self.numOutputs = numOutputs
     self.inputs = zeros(self.numInputs)
     self.outputs = zeros(self.numOutputs)
     
@@ -177,7 +177,7 @@ class Brain(object):
     inputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.inputNeuronArchive]
     outputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.outputNeuronArchive]
     
-    child = Brain(childSeed, zeros(len(self.inputs)), zeros(len(self.outputs)), \
+    child = Brain(childSeed, self.numInputs, self.numOutputs, \
                  inputNeurons, outputNeurons)
     child._startTime()
     return child
@@ -212,22 +212,22 @@ def breed(a, b):
 Returns a default brain with no evolved structure.
 inputs and outputs must be lists of some sort (they could be numpy arrays).
 '''
-def createEmpty(inputs, outputs):
+def createEmpty(numInputs, numOutputs):
   "Create isolated seed."
   synapse = Synapses.createRootSynapse()
   seed = Neurons.createRootNeuron([synapse], [synapse])
   
-  inputSynapses = [Synapses.createRootSynapse() for i in range(len(inputs))]
-  outputSynapses = [Synapses.createRootSynapse() for i in range(len(outputs))]
+  inputSynapses = [Synapses.createRootSynapse() for i in range(numInputs)]
+  outputSynapses = [Synapses.createRootSynapse() for i in range(numOutputs)]
   
   "Connect seed to inputs and outputs."
   inputNeurons = [InputNeuron(None, [], [inputSynapses[i]], zeros(Neurons.divisionDataSize)) \
-                  for i in range(len(inputs))]
+                  for i in range(numInputs)]
   outputNeurons = [OutputNeuron(None, [outputSynapses[i]], [], zeros(Neurons.divisionDataSize)) \
-                   for i in range(len(outputs))]
+                   for i in range(numOutputs)]
   
   "Make and start brain."
-  brain = Brain(seed, inputs, outputs, inputNeurons, outputNeurons)
+  brain = Brain(seed, numInputs, numOutputs, inputNeurons, outputNeurons)
   brain._startTime()
   return brain
 
