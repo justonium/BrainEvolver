@@ -4,7 +4,10 @@ Created on Dec 30, 2012
 @author: Justin
 '''
 
-from numpy import *
+try:
+  from numpypy import *
+except:
+  from numpy import *
 from heapq import *
 from Cell import Cell
 import Neurons

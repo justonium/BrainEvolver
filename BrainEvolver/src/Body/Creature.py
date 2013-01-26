@@ -29,7 +29,7 @@ class Creature(Sprite):
         self.theta = theta
         self.v = 1
         self.energy = 5000 + abs(50 * randn())
-        self.brain = createEmpty(range(10), range(10))
+        self.brain = createEmpty(10, 10)
         self.width = CREATURE_WIDTH
         self.height = CREATURE_HEIGHT
         

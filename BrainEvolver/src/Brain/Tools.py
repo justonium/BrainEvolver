@@ -4,19 +4,23 @@ Created on Jan 15, 2013
 @author: Justin
 '''
 
-from numpy import *
+try:
+  from numpypy import *
+except:
+  from numpy import *
+import random
 
 def createIdentityTransform(dataSize):
   return zeros(dataSize, dataSize + 1)
   #return hstack(zeros(dataSize, 1), identity(dataSize))
 
 def applyTransform(data, transform):
-  if (data == None):
+  if (data is None):
     pass
-  if (transform == None):
+  if (transform is None):
     pass
   
-  return dot(transform, append(array(1), data))
+  return dot(transform, concatenate((array([1]), data)))
 
 def createIdentityMap(dataSize):
   return zeros((2, dataSize))
@@ -46,7 +50,7 @@ def sampleDelay(rate):
   if (rate == inf):
     delay = minDelay
   elif (rate > 0):
-    delay = minDelay + random.exponential(1.0/rate)
+    delay = minDelay + random.expovariate(rate)
   else:
     delay = inf
   return delay

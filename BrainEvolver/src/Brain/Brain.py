@@ -4,7 +4,10 @@ Created on Dec 26, 2012
 @author: Justin
 '''
 
-from numpy import *
+try:
+  from numpypy import *
+except:
+  from numpy import *
 from heapq import *
 from DivisionTree import *
 import Synapses

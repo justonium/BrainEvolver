@@ -3,7 +3,12 @@ Created on Dec 30, 2012
 
 @author: Justin
 '''
-from numpy import *
+
+try:
+  from numpypy import *
+except:
+  from numpy import *
+import random
 from heapq import *
 from Cell import Cell
 import Synapses
@@ -166,7 +171,7 @@ class Neuron(Cell):
         branch = synapse.node.sinkCarries[-1]
         del synapse.node.sinkCarries[-1]
       else:
-        branch = random.random_integers(0, 1)
+        branch = random.randint(0, 1)
       if (branch == 0):
         left.inSynapses.add(synapse)
         synapse.sink = left
@@ -179,7 +184,7 @@ class Neuron(Cell):
         branch = synapse.node.sourceCarries[-1]
         del synapse.node.sourceCarries[-1]
       else:
-        branch = random.random_integers(0, 1)
+        branch = random.randint(0, 1)
       if (branch == 0):
         left.outSynapses.add(synapse)
         synapse.source = left

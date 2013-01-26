@@ -4,7 +4,11 @@ Created on Dec 30, 2012
 @author: Justin
 '''
 
-from numpy import *
+try:
+  from numpypy import *
+except:
+  from numpy import *
+import random
 import Synapses
 import Neurons
 from Neurons import defaultNeuronTransform
@@ -21,8 +25,8 @@ class DivisionTree(object):
   def __init__(self, root, dataMutationRates, transformMutationRates, \
                otherRates=None, sharedRates=defaultMutationRate*ones(numSharedRates)):
     self.root = root
-    self.dataMutationRates = dataMutationRates
-    self.transformMutationRates = transformMutationRates
+    self.dataMutationRates = dataMutationRates #tuple
+    self.transformMutationRates = transformMutationRates #tuple
     self.sharedRates = sharedRates
     self.otherRates = otherRates
   
@@ -33,8 +37,10 @@ class DivisionTree(object):
     return mutateArray(transform, *self.tranformMutations)
   
   def spawn(self, root):
-    return DivisionTree(root, mutateRates(self.dataMutationRates), \
-        mutateRates(self.transformMutationRates), mutateRates(self.otherRates), \
+    dataMutationRates = tuple([mutateRates(vec) for vec in self.dataMutationRates])
+    transformMutationRates = tuple([mutateRates(vec) for vec in self.transformMutationRates])
+    return DivisionTree(root, dataMutationRates, \
+        transformMutationRates, mutateRates(self.otherRates), \
         mutateRates(self.sharedRates))
 
 class NeuronTree(DivisionTree):
@@ -148,11 +154,11 @@ class SynapseNode(DivisionNode):
         del child.sourceCarries[0]
       
       elif (random.random() < tree.otherRates[5]):
-        index = random.random_integers(0, len(child.sourceCarries) - 1)
+        index = random.randint(0, len(child.sourceCarries) - 1)
         del child.sourceCarries[index]
       
       elif (random.random() < tree.otherRates[6]):
-        index = random.random_integers(0, len(child.sourceCarries) - 1)
+        index = random.randint(0, len(child.sourceCarries) - 1)
         child.sourceCarries = child.sourceCarries[-(index + 1):]
     
     if (self.sinkCarries):
@@ -161,11 +167,11 @@ class SynapseNode(DivisionNode):
         del child.sinkCarries[0]
       
       elif (random.random() < tree.otherRates[8]):
-        index = random.random_integers(0, len(child.sinkCarries) - 1)
+        index = random.randint(0, len(child.sinkCarries) - 1)
         del child.sinkCarries[index]
       
       elif (random.random() < tree.otherRates[9]):
-        index = random.random_integers(0, len(child.sinkCarries) - 1)
+        index = random.randint(0, len(child.sinkCarries) - 1)
         child.sinkCarries = child.sinkCarries[-(index + 1):]
     
     "do stuff with symmetric"
