@@ -14,6 +14,9 @@ import Neurons
 from Neurons import Neuron
 import DivisionTree
 from Tools import *
+from DynamicalSystem import *
+
+systemType = Neurons.systemType
 
 "main attributes"
 activation = 0
@@ -34,10 +37,8 @@ evolveRate = paramSize
 evolveRateEnd = evolveRate + evolveRateSize
 
 dataSize = paramSize + evolveRateSize
-fireTransformWidth = dataSize + 2*Neurons.numChemicals
-evolveTransformWidth = dataSize + 2*Neurons.numChemicals
-fireTransformSize = transformSize(fireTransformWidth, dataSize)
-evolveTransformSize = transformSize(fireTransformWidth, dataSize)
+fireTransformSize = getParamSize(systemType, dataSize, 2*Neurons.numChemicals)
+evolveTransformSize = getParamSize(systemType, dataSize, 2*Neurons.numChemicals)
 "used to access data only in finalize"
 fireTransform = dataSize
 evolveTransform = dataSize + fireTransformSize
@@ -62,6 +63,9 @@ class Synapse(Cell):
     "division data"
     self.node = node
     self.data = data
+    
+    "dynamic data"
+    self.system = None
     
     self.evolveRate = None
     
@@ -91,8 +95,10 @@ class Synapse(Cell):
   def fire(self, source):
     sink = self.getSink(source)
     sink.inBuffer += self.weight * self.activation
-    transformParam = concatenate((self.data, source.chemicals, sink.chemicals))
-    self.data += applyTransform(transformParam, self.fireTransform)
+    #transformParam = concatenate((self.data, source.chemicals, sink.chemicals))
+    #self.data += applyTransform(transformParam, self.fireTransform)
+    self.system.step(self.fireTransform, concatenate((source.chemicals, sink.chemicals)))
+    self.data = self.system.y
     self.schedule()
     return sink
   
@@ -100,8 +106,10 @@ class Synapse(Cell):
     return self.sink if source == self.source else self.source
   
   def evolve(self):
-    transformParam = concatenate((self.data, self.source.chemicals, self.sink.chemicals))
-    self.data += applyTransform(transformParam, self.evolveTransform)
+    #transformParam = concatenate((self.data, self.source.chemicals, self.sink.chemicals))
+    #self.data += applyTransform(transformParam, self.evolveTransform)
+    self.system.step(self.evolveTransform, concatenate((self.source.chemicals, self.sink.chemicals)))
+    self.data = self.system.y
     self.schedule()
   
   "enqueues new events"
@@ -136,11 +144,17 @@ class Synapse(Cell):
     if (self.node.symmetric):
       self.sink.inSynapses.remove(self)
       self.sink.outSynapses.add(self)
-    self.fireTransform = \
+    
+    '''self.fireTransform = \
         rollTransform(self.data[fireTransform:fireTransformEnd], fireTransformWidth, dataSize)
     self.evolveTransform = \
         rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth, dataSize)
-    self.data = self.data[:dataSize]
+    self.data = self.data[:dataSize]'''
+    
+    self.system = systemType(dataSize, self.data[:dataSize], 2*Neurons.numChemicals)
+    self.fireTransform = self.system.reshapeParams(self.data[fireTransform:fireTransformEnd])
+    self.evolveTransform = self.system.reshapeParams(self.data[evolveTransform:evolveTransformEnd])
+    
     "We don't need this node anymore."
     if (self.node.tree == None):
       self.node = None

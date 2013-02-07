@@ -14,6 +14,9 @@ from Cell import Cell
 import Synapses
 import DivisionTree
 from Tools import *
+from DynamicalSystem import *
+
+systemType = LDS
 
 '''main attributes'''
 sensitivity = 0
@@ -33,8 +36,8 @@ chemicals = numAttributes
 chemicalsEnd = paramSize
 
 dataSize = paramSize
-fireTransformSize = transformSize(dataSize)
-evolveTransformSize = transformSize(dataSize)
+fireTransformSize = getParamSize(systemType, dataSize)
+evolveTransformSize = getParamSize(systemType, dataSize)
 "used to access data only in finalize"
 fireTransform = dataSize
 evolveTransform = dataSize + fireTransformSize
@@ -73,6 +76,9 @@ class Neuron(Cell):
     "division data"
     self.node = node
     self.data = data
+    
+    "dynamic data"
+    self.system = None
     
     "static behavior of all other attributes"
     self.fireTransform = None
@@ -119,11 +125,15 @@ class Neuron(Cell):
       nextNeurons.add(sink)
     for neuron in nextNeurons:
       neuron.flush()
-    self.data += applyTransform(self.data, self.fireTransform)
+    #self.data += applyTransform(self.data, self.fireTransform)
+    self.system.step(self.fireTransform)
+    self.data = self.system.y
     self.schedule()
   
   def evolve(self):
-    self.data += applyTransform(self.data, self.evolveTransform)
+    #self.data += applyTransform(self.data, self.evolveTransform)
+    self.system.step(self.evolveTransform)
+    self.data = self.system.y
     self.schedule()
   
   "enqueues new events"
@@ -201,10 +211,15 @@ class Neuron(Cell):
     return ((left, right), synapse)
   
   def finalize(self):
-    self.fireTransform = \
+    '''self.fireTransform = \
         rollTransform(self.data[fireTransform:fireTransformEnd], dataSize)
     self.evolveTransform = \
-        rollTransform(self.data[evolveTransform:evolveTransformEnd], dataSize)
+        rollTransform(self.data[evolveTransform:evolveTransformEnd], dataSize)'''
+    
+    self.system = systemType(dataSize, self.data[:dataSize])
+    self.fireTransform = self.system.reshapeParams(self.data[fireTransform:fireTransformEnd])
+    self.evolveTransform = self.system.reshapeParams(self.data[evolveTransform:evolveTransformEnd])
+    
     self.data = self.data[:dataSize]
     "We don't need this node anymore."
     #if (self.node.tree == None):
