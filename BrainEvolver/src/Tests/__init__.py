@@ -6,11 +6,19 @@ Created on Jan 15, 2013
 
 class A(object):
   def __init__(self):
-    self.a = 0
+    pass
+  def _get_data(self):
+    return self.__data
+  def _set_data(self, data):
+    if not isinstance(data, int):
+      raise TypeError("data must be set to an integer")
+    self.__data = data
+  data = property(_get_data, _set_data)
 
 o = A()
-t = A
-print t
-print type(o)
-o2 = type(o)()
-print type(o) == A
+o.data = 'hi'
+print o.data
+
+
+
+

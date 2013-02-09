@@ -16,35 +16,46 @@ import DivisionTree
 from Tools import *
 from DynamicalSystem import *
 
-systemType = LDS
+systemType = CTRNN
 
-'''main attributes'''
-sensitivity = 0
-bias = 1
-input = 2
-fireRateScale = 3
-evolveRateScale = 4
-fireRate = 5
-evolveRate = 6
+numAttributes = 4
 
 "paramSize < dataSize < divisionDataSize"
-numAttributes = 7
-numChemicals = 1
-params = 0
-paramSize = numAttributes + numChemicals
-chemicals = numAttributes
-chemicalsEnd = paramSize
+inputSize = 1
+numChemicals = inputSize + 4
+chemicals = 0
+chemicalsEnd = numChemicals
 
-dataSize = paramSize
+dataSize = numChemicals
 fireTransformSize = getParamSize(systemType, dataSize)
 evolveTransformSize = getParamSize(systemType, dataSize)
+inputFireTransformSize = getParamSize(systemType, dataSize, 1) #unused
+inputEvolveTransformSize = getParamSize(systemType, dataSize, 1) #unused
+attributeFunSize = reduceSize(numChemicals)
+
 "used to access data only in finalize"
-fireTransform = dataSize
+sensitivityFun = dataSize
+sensitivityFunEnd = sensitivityFun + attributeFunSize
+biasFun = sensitivityFunEnd
+biasFunEnd = biasFun + attributeFunSize
+fireRateFun = biasFunEnd
+fireRateFunEnd = fireRateFun + attributeFunSize
+evolveRateFun = fireRateFunEnd
+evolveRateFunEnd = evolveRateFun + attributeFunSize
+
+fireTransform = evolveRateFunEnd
 evolveTransform = dataSize + fireTransformSize
 fireTransformEnd = fireTransform + fireTransformSize
 evolveTransformEnd = evolveTransform + evolveTransformSize
 
-divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
+inputFireTransform = evolveRateFunEnd
+inputEvolveTransform = dataSize + inputFireTransformSize
+inputFireTransformEnd = inputFireTransform + inputFireTransformSize
+inputEvolveTransformEnd = inputEvolveTransform + inputEvolveTransformSize
+
+divisionDataSize = dataSize + fireTransformSize + evolveTransformSize + numAttributes*attributeFunSize
+inputDivisionDataSize = dataSize + inputFireTransformSize + inputEvolveTransformSize \
+    + numAttributes*attributeFunSize
 
 
 
@@ -64,6 +75,8 @@ class Neuron(Cell):
     return type(self)(self.node, inSynapses, outSynapses, self.data.copy(), self.brain)
   
   def __init__(self, node, inSynapses, outSynapses, data, brain=None):
+    self.finalized = False
+    
     "structure"
     self.brain = brain
     self.inSynapses = set(inSynapses)
@@ -87,28 +100,28 @@ class Neuron(Cell):
     "utilities"
     self.inBuffer = 0
     self.nextEvent = None
-    self._accessDict = { \
-        'sensitivity' : lambda : self.data[sensitivity], \
-        'bias' : lambda : self.data[bias], \
-        'input' : lambda : self.data[input], \
-        'fireRateScale' : lambda : self.data[fireRateScale], \
-        'evolveRateScale' : lambda : self.data[evolveRateScale], \
-        'chemicals' : lambda : self.data[chemicals:chemicalsEnd], \
-        'params' : lambda : self.data[params:paramSize], \
-        'fireRate' : lambda : self.data[fireRate], \
-        'evolveRate' : lambda : self.data[evolveRate] \
-        }
-    self._writeDict = { \
-        'sensitivity' : self.writeValue(sensitivity), \
-        'bias' : self.writeValue(bias), \
-        'input' : self.writeValue(input), \
-        'fireRateScale' : self.writeValue(fireRateScale), \
-        'evolveRateScale' : self.writeValue(evolveRateScale), \
-        'chemicals' : self.writeVector(chemicals, chemicalsEnd), \
-        'params' : self.writeVector(params, paramSize), \
-        'fireRate' : self.writeValue(fireRate), \
-        'evolveRate' : self.writeValue(evolveRate) \
-    }
+    
+    self.chemicals = None
+    
+    self.sensitivityFun = None
+    self.biasFun = None
+    self.inputFun = None
+    self.fireRateFun = None
+    self.evolveRateFun = None
+    
+    self.sensitivity = None
+    self.bias = None
+    self.input = None
+    self.fireRate = None
+    self.evolveRate = None
+  
+  def _setInput(self, input):
+    if (input is not None and not isinstance(input, ndarray)):
+        raise TypeError
+    self.__input = input
+  def _getInput(self):
+    return self.__input
+  input = property(_getInput, _setInput)
   
   def getSynapse(self):
     raise NotImplementedError
@@ -119,30 +132,32 @@ class Neuron(Cell):
     self.schedule()
   
   def fire(self):
+    self.feedInput()
     nextNeurons = set()
     for synapse in self.outSynapses:
       sink = synapse.fire(self)
       nextNeurons.add(sink)
     for neuron in nextNeurons:
       neuron.flush()
-    #self.data += applyTransform(self.data, self.fireTransform)
     self.system.step(self.fireTransform)
-    self.data = self.system.y
+    self.chemicals = self.system.y
     self.schedule()
+    
   
   def evolve(self):
-    #self.data += applyTransform(self.data, self.evolveTransform)
+    self.feedInput()
     self.system.step(self.evolveTransform)
-    self.data = self.system.y
+    self.chemicals = self.system.y
     self.schedule()
   
   "enqueues new events"
   def schedule(self):
     "This remains true after self.nextEvent has executed."
-    if (self.nextEvent != None):
+    if (self.nextEvent is not None):
       self.nextEvent.active = False
-    self.updateRates()
+    self.updateAttributes()
     fireDelay = sampleDelay(self.fireRate)
+    #pickle.dump(self, open('./testnetwork.pkl', 'wb'))
     evolveDelay = sampleDelay(self.evolveRate)
     if (fireDelay < evolveDelay):
       delay = fireDelay
@@ -153,14 +168,15 @@ class Neuron(Cell):
     if (delay < inf):
       self.pushEvent(action, self.brain.currentTime + delay)
   
-  def updateRates(self):
-    '''
-    self.fireRate = self.fireRateScale * \
-        sigmoid(applyTransform(self.params, self.fireRateFun))
-    self.evolveRate = self.evolveRateScale * \
-        sigmoid(applyTransform(self.params, self.evolveRateFun))
-    '''
-    pass
+  def updateAttributes(self):
+    self.sensitivity = applyTransform(self.chemicals, self.sensitivityFun)
+    self.bias = applyTransform(self.chemicals, self.biasFun)
+    self.fireRate = applyTransform(self.chemicals, self.fireRateFun)
+    self.evolveRate = applyTransform(self.chemicals, self.evolveRateFun)
+  
+  def feedInput(self):
+    self.system.feedInput(self.input)
+    self.input = zeros(inputSize)
   
   def divide(self):
     "initialize children"
@@ -211,16 +227,24 @@ class Neuron(Cell):
     return ((left, right), synapse)
   
   def finalize(self):
-    '''self.fireTransform = \
-        rollTransform(self.data[fireTransform:fireTransformEnd], dataSize)
-    self.evolveTransform = \
-        rollTransform(self.data[evolveTransform:evolveTransformEnd], dataSize)'''
+    self.finalized = True
+    
+    self.chemicals = self.data[chemicals:chemicalsEnd]
+    
+    self.sensitivityFun = self.data[sensitivityFun:sensitivityFunEnd]
+    self.biasFun = self.data[biasFun:biasFunEnd]
+    self.fireRateFun = self.data[fireRateFun:fireRateFunEnd]
+    self.evolveRateFun = self.data[evolveRateFun:evolveRateFunEnd]
     
     self.system = systemType(dataSize, self.data[:dataSize])
     self.fireTransform = self.system.reshapeParams(self.data[fireTransform:fireTransformEnd])
     self.evolveTransform = self.system.reshapeParams(self.data[evolveTransform:evolveTransformEnd])
     
-    self.data = self.data[:dataSize]
+    self.input = zeros(inputSize)
+    self.updateAttributes()
+    
+    self.data = None
+    
     "We don't need this node anymore."
     #if (self.node.tree == None):
       #self.node = None
@@ -238,23 +262,71 @@ class Neuron(Cell):
     data = self.node.tree.mutateData(self.data)
     child = Neuron(self.node.spawn(), inSynapses, outSynapses, data)
     return child
+  
+  def sanity(self):
+    if (not (self.finalized \
+        and self.sensitivity is not None \
+        and self.bias is not None \
+        and self.input is not None \
+        and type(self.input) == ndarray)):
+      print 'fail'
 
 
 class InputNeuron(Neuron):
   
+  def __init__(self, node, inSynapses, outSynapses, data, tree, brain=None):
+    super(type(self), self).__init__(node, inSynapses, outSynapses, data, brain)
+    self.tree = tree
+  
   def getSynapse(self):
     return list(self.outSynapses)[0]
   
-  def updateRates(self):
-    input = self.input
-    super(InputNeuron, self).updateRates()
-    self.input = input
+  def flush(self):
+    pass
   
-  def spawn(self, tree):
+  def fire(self):
+    self.feedInput()
+    nextNeurons = set()
+    for synapse in self.outSynapses:
+      sink = synapse.fire(self)
+      nextNeurons.add(sink)
+    for neuron in nextNeurons:
+      neuron.flush()
+    self.system.step(self.fireTransform, self.input)
+    self.chemicals = self.system.y
+    self.schedule()
+  
+  def evolve(self):
+    self.feedInput()
+    self.system.step(self.evolveTransform, self.input)
+    self.chemicals = self.system.y
+    self.schedule()
+  
+  def spawn(self):
     synapse = self.getSynapse().spawn()
-    data = tree.mutateData(self.data)
-    child = InputNeuron(None, [], [synapse], data)
+    data = self.tree.mutateData(self.data)
+    child = InputNeuron(None, [], [synapse], data, self.tree.spawn(None))
     return child
+  
+  def finalize(self):
+    self.finalized = True
+    
+    self.chemicals = self.data[chemicals:chemicalsEnd]
+    
+    self.sensitivityFun = self.data[sensitivityFun:sensitivityFunEnd]
+    self.biasFun = self.data[biasFun:biasFunEnd]
+    self.fireRateFun = self.data[fireRateFun:fireRateFunEnd]
+    self.evolveRateFun = self.data[evolveRateFun:evolveRateFunEnd]
+    
+    self.system = systemType(dataSize, self.data[:dataSize], 1)
+    self.fireTransform = self.system.reshapeParams(self.data[inputFireTransform:inputFireTransformEnd])
+    self.evolveTransform = \
+        self.system.reshapeParams(self.data[inputEvolveTransform:inputEvolveTransformEnd])
+    
+    self.input = zeros(1)
+    self.updateAttributes()
+    
+    self.data = None
 
 class OutputNeuron(Neuron):
   
@@ -266,18 +338,6 @@ class OutputNeuron(Neuron):
     data = tree.mutateData(self.data)
     child = OutputNeuron(None, [synapse], [], data)
     return child
-  
-  def finalize(self):
-    self.data = self.data[:dataSize]
-  
-  def fire(self):
-    pass
-  
-  def evolve(self):
-    pass
-  
-  def schedule(self):
-    pass
 
 
 

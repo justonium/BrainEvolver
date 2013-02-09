@@ -15,6 +15,9 @@ class DynamicalSystem(object):
   
   def step(self, time):
     raise NotImplementedError
+  
+  def feedInput(self, input):
+    raise NotImplementedError
 
 class CTRNN(DynamicalSystem):
   
@@ -35,11 +38,18 @@ class CTRNN(DynamicalSystem):
     return (params[:Wsize].reshape([self.dataDim, self.dim + 1]), params[Wsize:])
   
   def step(self, params, inputs=array([]), time=1.0):
+    assert inputs is None or len(inputs) == self.inputDim
+    if (inputs is None):
+      inputs = array([])
     W = params[0]
     alpha = params[1]
-    z_prime = dot(W, concatenate([inputs, self.y, [1]])) - self.z
+    z_prime = dot(W, concatenate([inputs, self.y, array([1])])) - self.z
     self.z += alpha * z_prime * time
     self.y = sigmoid(self.z)
+  
+  def feedInput(self, inputs):
+    assert len(inputs) <= self.dataDim
+    self.z[:len(inputs)] += inputs
 
 class LDS(DynamicalSystem):
   
@@ -57,10 +67,17 @@ class LDS(DynamicalSystem):
       raise ValueError
     return params.reshape([self.dataDim, self.dim + 1])
   
-  def step(self, params, inputs=array([]), time=1.0):
+  def step(self, params, inputs=None, time=1.0):
+    if (not(inputs is None or len(inputs) == self.inputDim)):
+      raise ValueError
+    if (inputs is None):
+      inputs = array([])
     x_prime = dot(params, concatenate([inputs, self.y, [1]]))
-    x_prime[:self.inputDim] += inputs
     self.y += x_prime * time
+  
+  def feedInput(self, inputs):
+    assert len(inputs) <= self.dataDim
+    self.y[:len(inputs)] += inputs
 
 def getDataSize(T, dim):
   if (T == CTRNN):

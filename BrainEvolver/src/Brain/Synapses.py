@@ -18,34 +18,35 @@ from DynamicalSystem import *
 
 systemType = Neurons.systemType
 
-"main attributes"
-activation = 0
-weight = 1
-evolveRateScale = 2
+numAttributes = 4
 
 "paramSize < dataSize < divisionDataSize"
-numAttributes = 3
-numChemicals = 1
-params = 0
-paramSize = numAttributes + numChemicals
-chemicals = numAttributes
-chemicalsEnd = paramSize
+numChemicals = 4
+chemicals = 0
+chemicalsEnd = numChemicals
 
-evolveRateSize = reduceSize(paramSize)
-"also used to access data"
-evolveRate = paramSize
-evolveRateEnd = evolveRate + evolveRateSize
-
-dataSize = paramSize + evolveRateSize
+dataSize = numChemicals
 fireTransformSize = getParamSize(systemType, dataSize, 2*Neurons.numChemicals)
 evolveTransformSize = getParamSize(systemType, dataSize, 2*Neurons.numChemicals)
+attributeFunSize = reduceSize(numChemicals)
+
 "used to access data only in finalize"
-fireTransform = dataSize
+activationFun = numChemicals
+activationFunEnd = activationFun + attributeFunSize
+weightFun = activationFunEnd
+weightFunEnd = weightFun + transformSize(numChemicals, Neurons.inputSize)
+weightFunDim = (Neurons.inputSize, numChemicals + 1)
+fireRateFun = weightFunEnd
+fireRateFunEnd = fireRateFun + attributeFunSize
+evolveRateFun = fireRateFunEnd
+evolveRateFunEnd = evolveRateFun + attributeFunSize
+
+fireTransform = evolveRateFunEnd
 evolveTransform = dataSize + fireTransformSize
 fireTransformEnd = fireTransform + fireTransformSize
 evolveTransformEnd = evolveTransform + evolveTransformSize
 
-divisionDataSize = dataSize + fireTransformSize + evolveTransformSize
+divisionDataSize = dataSize + fireTransformSize + evolveTransformSize + numAttributes*attributeFunSize
 
 
 
@@ -55,6 +56,8 @@ class Synapse(Cell):
     return Synapse(self.node, self.data.copy(), self.brain)
   
   def __init__(self, node, data, brain=None):
+    self.finalized = False
+    
     "structure"
     self.brain = brain
     self.source = None
@@ -75,30 +78,24 @@ class Synapse(Cell):
     
     "utilities"
     self.nextEvent = None
-    self._accessDict = { \
-        'activation' : lambda : self.data[activation], \
-        'weight' : lambda : self.data[weight], \
-        'evolveRateScale' : lambda : self.data[evolveRateScale], \
-        'chemicals' : lambda : self.data[chemicals:chemicalsEnd], \
-        'params' : lambda : self.data[params:paramSize], \
-        'evolveRateFun' : lambda : self.data[evolveRate:evolveRateEnd] \
-        }
-    self._writeDict = { \
-        'activation' : super(Synapse, self).writeValue(activation), \
-        'weight' : self.writeValue(weight), \
-        'evolveRateScale' : self.writeValue(evolveRateScale), \
-        'chemicals' : self.writeVector(chemicals, chemicalsEnd), \
-        'params' : self.writeVector(params, paramSize), \
-        'evolveRateFun' : self.writeVector(evolveRate, evolveRateSize) \
-        }
+    
+    self.chemicals = None
+    
+    self.activationFun = None
+    self.weightFun = None
+    self.fireRateFun = None
+    self.evolveRateFun = None
+    
+    self.activation = None
+    self.weight = None
+    self.fireRate = None
+    self.evolveRate = None
   
   def fire(self, source):
     sink = self.getSink(source)
     sink.inBuffer += self.weight * self.activation
-    #transformParam = concatenate((self.data, source.chemicals, sink.chemicals))
-    #self.data += applyTransform(transformParam, self.fireTransform)
-    self.system.step(self.fireTransform, concatenate((source.chemicals, sink.chemicals)))
-    self.data = self.system.y
+    self.system.step(self.fireTransform, concatenate([sink.chemicals, source.chemicals]))
+    self.chemicals = self.system.y
     self.schedule()
     return sink
   
@@ -106,28 +103,25 @@ class Synapse(Cell):
     return self.sink if source == self.source else self.source
   
   def evolve(self):
-    #transformParam = concatenate((self.data, self.source.chemicals, self.sink.chemicals))
-    #self.data += applyTransform(transformParam, self.evolveTransform)
     self.system.step(self.evolveTransform, concatenate((self.source.chemicals, self.sink.chemicals)))
-    self.data = self.system.y
+    self.chemicals = self.system.y
     self.schedule()
   
   "enqueues new events"
   def schedule(self):
-    if (self.nextEvent != None):
+    if (self.nextEvent is not None):
       self.nextEvent.active = False
-    self.updateRates()
+    self.updateAttributes()
     delay = sampleDelay(self.evolveRate)
     action = self.evolve
     if (delay < inf):
       self.pushEvent(action, self.source.brain.currentTime + delay)
   
-  def updateRates(self):
-    '''
-    self.evolveRate = self.evolveRateScale * \
-        sigmoid(applyTransform(self.params, self.evolveRateFun))
-    '''
-    pass
+  def updateAttributes(self):
+    self.activation = applyTransform(self.chemicals, self.activationFun)
+    self.weight = applyTransform(self.chemicals, self.weightFun)
+    self.fireRate = applyTransform(self.chemicals, self.fireRateFun)
+    self.evolveRate = applyTransform(self.chemicals, self.evolveRateFun)
   
   def divide(self):
     left = self.copy()
@@ -141,22 +135,29 @@ class Synapse(Cell):
     return (left, right)
   
   def finalize(self):
+    self.finalized = True
+    
     if (self.node.symmetric):
       self.sink.inSynapses.remove(self)
       self.sink.outSynapses.add(self)
     
-    '''self.fireTransform = \
-        rollTransform(self.data[fireTransform:fireTransformEnd], fireTransformWidth, dataSize)
-    self.evolveTransform = \
-        rollTransform(self.data[evolveTransform:evolveTransformEnd], evolveTransformWidth, dataSize)
-    self.data = self.data[:dataSize]'''
+    self.chemicals = self.data[chemicals:chemicalsEnd]
+    
+    self.activationFun = self.data[activationFun:activationFunEnd]
+    self.weightFun = self.data[weightFun:weightFunEnd].reshape(weightFunDim)
+    self.fireRateFun = self.data[fireRateFun:fireRateFunEnd]
+    self.evolveRateFun = self.data[evolveRateFun:evolveRateFunEnd]
     
     self.system = systemType(dataSize, self.data[:dataSize], 2*Neurons.numChemicals)
     self.fireTransform = self.system.reshapeParams(self.data[fireTransform:fireTransformEnd])
     self.evolveTransform = self.system.reshapeParams(self.data[evolveTransform:evolveTransformEnd])
     
+    self.updateAttributes()
+    
+    self.data = None
+    
     "We don't need this node anymore."
-    if (self.node.tree == None):
+    if (self.node.tree is None):
       self.node = None
   
   def isReady(self):

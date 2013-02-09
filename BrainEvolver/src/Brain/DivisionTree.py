@@ -200,9 +200,13 @@ leafSynapseNode = SynapseNode(None, None, True, defaultSynapseTransform(), defau
 
 def rootNeuronNode():
   node = NeuronNode(None, None, True, defaultNeuronTransform(), defaultNeuronTransform())
-  node.tree = SynapseTree(node, emptyMutationRates((Neurons.divisionDataSize)), \
+  node.tree = NeuronTree(node, emptyMutationRates((Neurons.divisionDataSize)), \
       emptyMutationRates((2, Neurons.divisionDataSize)))
   return node
+
+def inputTree():
+  return NeuronTree(None, emptyMutationRates((Neurons.inputDivisionDataSize)), \
+      emptyMutationRates((2, Neurons.inputDivisionDataSize)))
 
 def rootSynapseNode():###symmetric shouldn't be True
   node = SynapseNode(None, None, True, defaultSynapseTransform(), defaultSynapseTransform())

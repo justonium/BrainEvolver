@@ -27,6 +27,7 @@ class Cell(object):
     self.nextEvent = event
     heappush(self.brain.events, (executionTime, event))
   
+  '''
   def writeValue(self, location):
     def _writeValue(self, value):
       self.data[location] = value
@@ -45,6 +46,7 @@ class Cell(object):
   
   def __getattr__(self, fieldname):
     return self._accessDict[fieldname]()
+  '''
 
 
 

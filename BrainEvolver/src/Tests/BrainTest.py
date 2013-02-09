@@ -7,7 +7,6 @@ Created on Jan 17, 2013
 import Brain
 from Brain import Neuron
 from Brain import Synapse
-
 from Brain import *
 
 brain = createEmpty(1, 1)

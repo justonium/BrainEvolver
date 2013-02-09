@@ -135,7 +135,7 @@ class Brain(object):
     self.currentTime = 0.0
     for i in range(self.numInputs):
       neuron = self.inputNeurons[i]
-      neuron.input = self.inputs[i]
+      neuron.input = array([self.inputs[i]])
       neuron.schedule()
     for neuron in self.neurons:
       neuron.schedule()
@@ -154,7 +154,7 @@ class Brain(object):
       self.inputs = inputs
       for i in range(self.numInputs):
         neuron = self.inputNeurons[i]
-        neuron.input = inputs[i]
+        neuron.input = array([inputs[i]])
         neuron.schedule()
         
     self.outputs = 0*self.outputs
@@ -171,13 +171,13 @@ class Brain(object):
     
     "Read output neurons."
     for i in range(self.numOutputs):
-      self.outputs[i] = self.outputNeurons[i].input
+      self.outputs[i] = self.outputNeurons[i].fireRate
   
   "Returns an asexually produced child."
   def spawn(self):
     childSeed = self.seed.spawn()
     
-    inputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.inputNeuronArchive]
+    inputNeurons = [neuron.spawn() for neuron in self.inputNeuronArchive]
     outputNeurons = [neuron.spawn(self.seed.node.tree) for neuron in self.outputNeuronArchive]
     
     child = Brain(childSeed, self.numInputs, self.numOutputs, \
@@ -224,8 +224,8 @@ def createEmpty(numInputs, numOutputs):
   outputSynapses = [Synapses.createRootSynapse() for i in range(numOutputs)]
   
   "Connect seed to inputs and outputs."
-  inputNeurons = [InputNeuron(None, [], [inputSynapses[i]], zeros(Neurons.divisionDataSize)) \
-                  for i in range(numInputs)]
+  inputNeurons = [InputNeuron(None, [], [inputSynapses[i]], zeros(Neurons.inputDivisionDataSize), \
+                              inputTree()) for i in range(numInputs)]
   outputNeurons = [OutputNeuron(None, [outputSynapses[i]], [], zeros(Neurons.divisionDataSize)) \
                    for i in range(numOutputs)]
   
