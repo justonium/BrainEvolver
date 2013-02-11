@@ -71,10 +71,10 @@ class World(object):
         pygame.surfarray.blit_array(self.window, self.grid)         
         
         for creat in self.creatures:
-            self.window.blit(creat.image, self._t((creat.x, creat.y)))
+            self.window.blit(creat.image, self._t((creat.y, creat.y)))
             creat.tick()
-            if creat.x < 0:
-                creat.x = 0
+            if creat.y < 0:
+                creat.y = 0
                 
             if creat.y < 0:
                 creat.y = 0

@@ -17,7 +17,7 @@ class WorldObject(Sprite):
         '''
         if code != CODE_VALID:
             raise Exception('WorldObject is abstract. Please do not instantiate.')
-        self.x = None
+        self.y = None
         self.y = None
         
         

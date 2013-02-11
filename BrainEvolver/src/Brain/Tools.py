@@ -69,6 +69,18 @@ def smoothRectLinear(z):
 
 
 
-
+def concatenate2(arrays):
+  length = 0
+  for array in arrays:
+    length += len(array)
+  result = zeros(length)
+  
+  i = 0
+  for array in arrays:
+    length = len(array)
+    result[i:i+length] = array
+    i = i + length
+  
+  return result
 
 

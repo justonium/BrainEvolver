@@ -22,6 +22,6 @@ class GradientSniffer(Sense):
         self.llname = "grad_sense"
     
     def __gather(self, world):
-        val = world.getFloorPixel(self.creature.x + self.rel_x, self.creature.y + self.rel_y)
+        val = world.getFloorPixel(self.creature.y + self.rel_x, self.creature.y + self.rel_y)
         self.__push(val)
         

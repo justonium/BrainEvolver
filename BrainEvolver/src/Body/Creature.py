@@ -24,7 +24,7 @@ class Creature(Sprite):
         Class represents a 
     '''
     def __init__(self, x=0, y=0, theta=0):
-        self.x = x
+        self.y = x
         self.y = y
         self.theta = theta
         self.v = 1
@@ -48,7 +48,7 @@ class Creature(Sprite):
     def tick(self):
         self.brain.elapseTime(10, [(randrange(1, 1000) * 1.0)/ 1000 for _ in xrange(10)])
         self.y -= math.sin(deg2rad(self.theta)) * self.v
-        self.x += math.cos(deg2rad(self.theta)) * self.v 
+        self.y += math.cos(deg2rad(self.theta)) * self.v 
         self.theta += (random.randrange(60)) - 30
         self.image = pygame.transform.rotate(self.base_image, self.theta)
         

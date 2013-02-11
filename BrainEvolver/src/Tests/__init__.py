@@ -4,6 +4,12 @@ Created on Jan 15, 2013
 @author: Justin
 '''
 
+try:
+  from numpypy import *
+except:
+  from numpy import *
+from Brain.Tools import concatenate
+
 class A(object):
   def __init__(self):
     pass
@@ -15,10 +21,7 @@ class A(object):
     self.__data = data
   data = property(_get_data, _set_data)
 
-o = A()
-o.data = 'hi'
-print o.data
-
+print concatenate([array([1,2]), array([3]), array([4,5])])
 
 
 
