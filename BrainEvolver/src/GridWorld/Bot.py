@@ -22,13 +22,17 @@ class Bot(object):
     moves = [('left', 1), ('right', 1), ('up', 1), ('down', 1)]
     self.outputs = ArrayInterface(moves + [('dataOut', dataSize), ('code', codeSize)])
     
-    self.inputs = ArrayInterface([('dataIn', dataSize), ('birth', 1)])
+    self.inputs = ArrayInterface([('dataIn', dataSize), ('correct', 1)])
     
-    self.brain = createEmpty(self.inputs.size, self.outputs.size)
+    self.brain = createSimple(self.inputs.size, self.outputs.size)
     
-    self.age = 0.0
+    #self.age = 0.0
+    self.age = -120.0 #debug
     self.lifespan = random.expovariate(1/lifespan)
-    self.spawnTime = random.expovariate(spawnRate)
+    #self.spawnTime = random.expovariate(spawnRate)
+    self.spawnTime = 120.0 #debug
+    
+    self.node = None
   
   def spawn(self):
     child = Bot()
@@ -36,13 +40,12 @@ class Bot(object):
     self.spawnTime = random.expovariate(spawnRate)
     return child
   
-  def elapseTime(self, time, correct):
+  def elapseTime(self, time):
     self.age += time
     if (self.age > self.lifespan):
       return False
     
-    if (correct):
-      self.spawnTime -= time
+    self.spawnTime -= time * self.inputs.correct
     
     self.brain.elapseTime(time, self.inputs.data)
     self.outputs.data = self.brain.outputs

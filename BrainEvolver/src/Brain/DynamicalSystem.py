@@ -50,6 +50,7 @@ class CTRNN(DynamicalSystem):
   def feedInput(self, inputs):
     assert len(inputs) <= self.dataDim
     self.z[:len(inputs)] += inputs
+    self.y = sigmoid(self.z)
 
 class LDS(DynamicalSystem):
   

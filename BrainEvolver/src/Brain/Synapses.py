@@ -42,8 +42,8 @@ evolveRateFun = fireRateFunEnd
 evolveRateFunEnd = evolveRateFun + attributeFunSize
 
 fireTransform = evolveRateFunEnd
-evolveTransform = dataSize + fireTransformSize
 fireTransformEnd = fireTransform + fireTransformSize
+evolveTransform = fireTransformEnd
 evolveTransformEnd = evolveTransform + evolveTransformSize
 
 divisionDataSize = dataSize + fireTransformSize + evolveTransformSize + numAttributes*attributeFunSize

@@ -20,7 +20,7 @@ def applyTransform(data, transform):
   if (transform is None):
     pass
   
-  return dot(transform, concatenate((array([1]), data)))
+  return dot(transform, concatenate((data, [1])))
 
 def createIdentityMap(dataSize):
   return zeros((2, dataSize))
@@ -43,7 +43,7 @@ def rollTransform(vector, width, height=None):
 
 
 
-maxRate = 24. #the frame rate of most movies
+maxRate = 12.0
 minDelay = 1/maxRate
 
 def sampleDelay(rate):

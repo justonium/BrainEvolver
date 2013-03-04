@@ -4,7 +4,10 @@ Created on Feb 10, 2013
 @author: Justin
 '''
 
-from numpy import *
+try:
+  from numpypy import *
+except:
+  from numpy import *
 from Bot import *
 
 
@@ -17,9 +20,24 @@ class Grid(object):
     self.height = gridHeight
   
   def getNode(self, x, y):
-    x = mod(x, self.width)
-    y = mod(y, self.height)
+    x = x % self.width
+    y = y % self.height
     return self.array[x][y]
+  
+  def numBots(self):
+    numBots = 0
+    for x in range(self.width):
+      for y in range(self.height):
+        numBots += len(self.getNode(x, y).bots)
+    return numBots
+  
+  def numCorrect(self):
+    numCorrect = 0
+    for x in range(self.width):
+      for y in range(self.height):
+        for bot in self.getNode(x, y).bots:
+          numCorrect += 1 if bot.inputs.correct > 0.5 else 0
+    return numCorrect
 
 class Node(object):
   
@@ -29,3 +47,11 @@ class Node(object):
   
   def clearData(self):
     self.data = zeros(dataSize)
+  
+  def add(self, bot):
+    self.bots.add(bot)
+    bot.node = self
+  
+  def remove(self, bot):
+    self.bots.remove(bot)
+    bot.node = None

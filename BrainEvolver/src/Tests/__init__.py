@@ -21,7 +21,9 @@ class A(object):
     self.__data = data
   data = property(_get_data, _set_data)
 
-print concatenate([array([1,2]), array([3]), array([4,5])])
-
+#print concatenate([array([1,2]), array([3]), array([4,5])])
+for i in range(10):
+  i +=2
+  print i
 
 

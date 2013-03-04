@@ -137,6 +137,10 @@ class Brain(object):
       neuron = self.inputNeurons[i]
       neuron.input = array([self.inputs[i]])
       neuron.schedule()
+    for i in range(self.numOutputs):
+      neuron = self.outputNeurons[i]
+      self.outputs[i] = neuron.fireRate
+      neuron.schedule()
     for neuron in self.neurons:
       neuron.schedule()
       for synapse in neuron.outSynapses:
@@ -148,7 +152,7 @@ class Brain(object):
   inputs will retain last assigned value.'''
   def elapseTime(self, timeElapsed, inputs=None):
     "Update input neurons."
-    if (inputs == None):
+    if (inputs is None):
       inputs = self.inputs
     else:
       self.inputs = inputs
@@ -233,6 +237,63 @@ def createEmpty(numInputs, numOutputs):
   brain = Brain(seed, numInputs, numOutputs, inputNeurons, outputNeurons)
   brain._startTime()
   return brain
+
+def createSimple(numInputs, numOutputs):
+  
+  synapse = Synapses.createRootSynapse()
+  seed = Neurons.createRootNeuron([synapse], [synapse])
+  
+  inputSynapses = [Synapses.createRootSynapse() for i in range(numInputs)]
+  outputSynapses = [Synapses.createRootSynapse() for i in range(numOutputs)]
+  
+  "Connect seed to inputs and outputs."
+  inputNeurons = [InputNeuron(None, [], [inputSynapses[i]], zeros(Neurons.inputDivisionDataSize), \
+                              inputTree()) for i in range(numInputs)]
+  outputNeurons = [OutputNeuron(None, [outputSynapses[i]], [], zeros(Neurons.divisionDataSize)) \
+                   for i in range(numOutputs)]
+  
+  inputNeuron = inputNeurons[-1]
+  outputNeuron = outputNeurons[-1]
+  inputSynapse = inputNeuron.getSynapse()
+  outputSynapse = outputNeuron.getSynapse()
+  
+  "edit contents"
+  inputNeuron.data[Neurons.fireRateFunEnd - 1] = -2
+  inputNeuron.data[Neurons.fireRateFun] = 10
+  inputNeuron.data[Neurons.evolveRateFunEnd - 1] = 4
+  inputNeuron.data[Neurons.sensitivityFunEnd - 1] = 1
+  inputNeuron.data[Neurons.inputEvolveTransform + Neurons.dataSize + Neurons.inputSize] = -2
+  inputNeuron.data[Neurons.inputEvolveTransform] = 4
+  inputNeuron.data[Neurons.inputEvolveTransform + \
+                   Neurons.dataSize * (Neurons.dataSize + 2)] = 0.2
+  
+  seed.data[Neurons.fireRateFunEnd - 1] = -2
+  seed.data[Neurons.fireRateFun] = 10
+  seed.data[Neurons.evolveRateFunEnd - 1] = 4
+  seed.data[Neurons.sensitivityFunEnd - 1] = 1
+  seed.data[Neurons.evolveTransform + Neurons.dataSize] = -2
+  seed.data[Neurons.evolveTransform + \
+                   Neurons.dataSize * (Neurons.dataSize + 1)] = 0.2
+  
+  outputNeuron.data[Neurons.fireRateFunEnd - 1] = -2
+  outputNeuron.data[Neurons.fireRateFun] = 10
+  outputNeuron.data[Neurons.evolveRateFunEnd - 1] = 4
+  outputNeuron.data[Neurons.sensitivityFunEnd - 1] = 1
+  outputNeuron.data[Neurons.evolveTransform + Neurons.dataSize] = -2
+  outputNeuron.data[Neurons.evolveTransform + \
+                   Neurons.dataSize * (Neurons.dataSize + 1)] = 0.2
+  
+  inputSynapse.data[Synapses.weightFunEnd - 1] = 1
+  inputSynapse.data[Synapses.activationFunEnd - 1] = 1
+  
+  outputSynapse.data[Synapses.weightFunEnd - 1] = 1
+  outputSynapse.data[Synapses.activationFunEnd - 1] = 1
+  "done editing contents"
+  
+  brain = Brain(seed, numInputs, numOutputs, inputNeurons, outputNeurons)
+  brain._startTime()
+  return brain
+  
 
 
 

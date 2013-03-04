@@ -15,7 +15,7 @@ from Neurons import defaultNeuronTransform
 from Synapses import defaultSynapseTransform
 from MutationTools import *
 
-defaultMutationRate = 0.1
+defaultMutationRate = 0.001
 numSharedRates = 2
 numNeuronNodeRates = 0
 numSynapseNodeRates = 12

@@ -10,17 +10,24 @@ from Brain import Synapse
 from Brain import *
 from Bot import *
 from Grid import *
-import numpy as np
+try:
+  from numpypy import *
+except:
+  from numpy import *
+  import numpy.random as nprandom
 import random
+import math
+import pickle
 
 gridWidth = 10
 gridHeight = 10
-numBots = 50
-timeStepSize = 0.1
-codeRefreshRate = 0.1
+numBots = 1
+maxBots = 10
+timeStepSize = 0.5
+codeRefreshRate = 0.2
 reportFrequency = 1
 
-stepsPerReport = int(np.ceil(reportFrequency/timeStepSize))
+stepsPerReport = int(ceil(reportFrequency/timeStepSize))
 
 
 
@@ -34,12 +41,15 @@ class GridSimulation(object):
       bot = Bot()
       x = random.randint(0, gridWidth-1)
       y = random.randint(0, gridWidth-1)
-      self.grid.getNode(x, y).bots.add(bot)
+      self.grid.getNode(x, y).add(bot)
       self.createCode()
       self.stepCount = 0
   
   def createCode(self):
-    self.code = np.random.random_integers(0, 1, codeSize)
+    #self.code = nprandom.random_integers(0, 1, codeSize)
+    self.code = zeros(codeSize)
+    for i in range(codeSize):
+      self.code[i] = random.randint(0, 1)
     self.refreshAge = self.age + random.expovariate(codeRefreshRate)
     
   "run the simulation"
@@ -50,11 +60,10 @@ class GridSimulation(object):
       "report"
       if (self.stepCount <= 0):
         self.stepCount += stepsPerReport
-        numBots = 0
-        for x in range(self.grid.width):
-          for y in range(self.grid.height):
-            numBots += len(self.grid.getNode(x, y).bots)
-        print 'Time:', self.age, 'Number of Bots:', numBots
+        numBots = self.grid.numBots()
+        numCorrect = self.grid.numCorrect()
+        print 'Time:', self.age, 'Number of Bots:', numBots, 'Code:', self.code, \
+        'Percent correct:', float(numCorrect)/numBots
       self.stepCount -= 1
       
       self.age += timeStepSize
@@ -77,7 +86,7 @@ class GridSimulation(object):
             left = bot.outputs.left > random.random()
             right = bot.outputs.right > random.random()
             up = bot.outputs.up > random.random()
-            down = bot.outputs.down > random.random
+            down = bot.outputs.down > random.random()
             if (left and right):
               left = False
               right = False
@@ -97,25 +106,40 @@ class GridSimulation(object):
             if (down):
               newy -= 1
             
+            node2 = node
             "make move"
             if ((x, y) != (newx, newy)):
-              node.bots.remove(bot)
-              self.grid.getNode(newx, newy).bots.add(bot)
+              node.remove(bot)
+              node2 = self.grid.getNode(newx, newy)
+              node2.add(bot)
             
             "reproduce"
             if (bot.spawnTime <= 0.0):
-              node.bots.add(bot.spawn())
+              node2.add(bot.spawn())
             
             "elapse bot time and remove dead bots"
             guess = bot.outputs.code
-            guess = np.maximum(guess, 0)
-            guess = np.minimum(guess, 1)
-            correct = reduce(lambda x, y : x * y, np.abs(guess - self.code)) < random.random()
-            alive = bot.elapseTime(timeStepSize, correct)
+            guess = maximum(guess, 0)
+            guess = minimum(guess, 1)
+            correct = reduce(lambda x, y : x * y, abs(guess - self.code)) < random.random()
+            #bot.inputs.correct = 1 if correct else 0
+            #debug
+            bot.inputs.correct = self.code[0]
+            print correct
+            
+            alive = bot.elapseTime(timeStepSize)
             if (not alive):
-              node.bots.remove(bot)
-
-
+              node2.remove(bot)
+      
+      "kill extra bots"
+      bots = []
+      for x in range(self.grid.width):
+        for y in range(self.grid.height):
+          node = self.grid.getNode(x, y)
+          bots.extend(node.bots)
+      random.shuffle(bots)
+      for i in range(maxBots, len(bots)):
+        bots[i].node.remove(bots[i])
 
 
 

@@ -44,13 +44,13 @@ evolveRateFun = fireRateFunEnd
 evolveRateFunEnd = evolveRateFun + attributeFunSize
 
 fireTransform = evolveRateFunEnd
-evolveTransform = dataSize + fireTransformSize
 fireTransformEnd = fireTransform + fireTransformSize
+evolveTransform = fireTransformEnd
 evolveTransformEnd = evolveTransform + evolveTransformSize
 
 inputFireTransform = evolveRateFunEnd
-inputEvolveTransform = dataSize + inputFireTransformSize
 inputFireTransformEnd = inputFireTransform + inputFireTransformSize
+inputEvolveTransform = inputFireTransformEnd
 inputEvolveTransformEnd = inputEvolveTransform + inputEvolveTransformSize
 
 divisionDataSize = dataSize + fireTransformSize + evolveTransformSize + numAttributes*attributeFunSize
@@ -126,9 +126,15 @@ class Neuron(Cell):
   def getSynapse(self):
     raise NotImplementedError
   
+  "inBuffer and input are both buffers in members of Neuron and OutputNeuron."
   def flush(self):
+    #debug
+    if (self.sensitivity == 1):
+      pass
+    
     self.input += self.sensitivity * (self.inBuffer + self.bias)
     self.inBuffer = 0.0
+    self.feedInput()
     self.schedule()
   
   def fire(self):
@@ -145,6 +151,10 @@ class Neuron(Cell):
     
   
   def evolve(self):
+    #debug
+    if (self.evolveTransform[1][0] == 1):
+      pass
+    
     self.feedInput()
     self.system.step(self.evolveTransform)
     self.chemicals = self.system.y
@@ -177,6 +187,7 @@ class Neuron(Cell):
   def feedInput(self):
     self.system.feedInput(self.input)
     self.input = zeros(inputSize)
+    self.chemicals = self.system.y
   
   def divide(self):
     "initialize children"
@@ -243,6 +254,10 @@ class Neuron(Cell):
     self.input = zeros(inputSize)
     self.updateAttributes()
     
+    #debug
+    if (self.data[evolveTransform + dataSize * (dataSize + 1)] == 1):
+      pass
+    
     self.data = None
     
     "We don't need this node anymore."
@@ -285,7 +300,6 @@ class InputNeuron(Neuron):
     pass
   
   def fire(self):
-    self.feedInput()
     nextNeurons = set()
     for synapse in self.outSynapses:
       sink = synapse.fire(self)
@@ -297,7 +311,10 @@ class InputNeuron(Neuron):
     self.schedule()
   
   def evolve(self):
-    self.feedInput()
+    #debug
+    if (self.evolveTransform[1][0] == 1):
+      pass
+    
     self.system.step(self.evolveTransform, self.input)
     self.chemicals = self.system.y
     self.schedule()
@@ -325,6 +342,10 @@ class InputNeuron(Neuron):
     
     self.input = zeros(1)
     self.updateAttributes()
+    
+    #debug
+    if (self.data[inputEvolveTransform + dataSize * (dataSize + 2)] == 1):
+      pass
     
     self.data = None
 
