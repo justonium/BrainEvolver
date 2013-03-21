@@ -9,14 +9,6 @@ from numpy import *
 '''
 This object lets you access and edit arrays in it, and also access the field 'data',
 which contains all of the arrays concatenated together.
-
-Example code:
-
-interface = ArrayInterface([('vector1', 4), ('vector2', 1)])
-interface.vector1 = range(4)
-interface.vector2 = [4]
-print interface.vector1 #prints range(4)
-print interface.data #prints range(5)
 '''
 class ArrayInterface(object):
   
@@ -34,7 +26,7 @@ class ArrayInterface(object):
     
     for name, dataDim in nameSizePairs:
       start = self.size
-      self._accessDict[name] = lambda : self.data[start:start + dataDim]
+      self._accessDict[name] = lambda start=start, dataDim=dataDim : self.data[start:start + dataDim]
       self._writeDict[name] = self.writeVector(start, start + dataDim)
       self.size += dataDim
     
@@ -60,3 +52,11 @@ class ArrayInterface(object):
  
 def deny(arg1, arg2):
   raise Exception('You can''t do that.')
+
+
+"example code"
+interface = ArrayInterface([('vector1', 4), ('vector2', 1)])
+interface.vector1 = range(4)
+interface.vector2 = [4]
+print interface.vector1 #prints range(4)
+print interface.data #prints range(5)
