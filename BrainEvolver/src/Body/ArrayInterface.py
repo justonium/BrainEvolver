@@ -55,8 +55,10 @@ def deny(arg1, arg2):
 
 
 "example code"
+'''
 interface = ArrayInterface([('vector1', 4), ('vector2', 1)])
 interface.vector1 = range(4)
 interface.vector2 = [4]
 print interface.vector1 #prints range(4)
 print interface.data #prints range(5)
+'''
